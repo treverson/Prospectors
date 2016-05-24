@@ -1,0 +1,80 @@
+body {
+	font-family: 'Press Start 2P', cursive;
+}
+
+.background {
+	background: rgb(52, 166, 251);
+    table-layout: fixed;
+    border-spacing: 0;
+	margin: 0 auto;
+}
+
+.background td {
+	padding: 0;
+}
+
+.wall {
+	background-color: black;
+	border: 1px solid #fff;
+}
+
+.block {
+	border: 1px solid #fff;
+	background-color: #ccc;
+}
+
+.player {
+	border: 1px solid #fff;
+	background-color: blue;
+}
+
+.enemy {
+	border: 1px solid #fff;
+	background-color: red;
+}
+
+.game {
+  padding: 60px;
+  width: 775px;
+  margin: 0 auto; 
+}
+
+.lost .player {
+  background: rgb(160, 64, 64);
+}
+.won .player {
+  box-shadow: -4px -7px 8px white, 4px -7px 8px white;
+}
+
+.panel {
+	display: block;
+	position: relative;
+	padding: 50px;
+}
+.score {
+	position: absolute;
+	left: 0;
+	font-size: 20px;
+}
+
+.lives {
+	position: absolute;
+	right: 0;
+	display: inline-block;
+}
+
+.lives div {
+	display: inline-block;
+}
+
+.gameOverInner {
+	position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: auto;
+    width: 420px;
+    font-size: 46px;
+    height: 50px;
+}
