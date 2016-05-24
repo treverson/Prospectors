@@ -86,22 +86,22 @@ Implementation:
 			- ForeGround (redrawn)
 	- Definition:
 		- startWorld: function
-		- 
-	* City
-		- Player moves in an N x N grid.
-		- Need to listen to live input.
-		- Draw BG & FG.
-	* Arena
-		- Player chooses moves in UI.
-		- No need to listen to any live input!
-			* but we can, if we want to listen to arrow key presses.
-		- Draw UI.
-	* Market
-		- Player interacts with UI
-		- No need to listen to any live input!
-			* but we can, if we want to listen to arrow key presses.
-		- Draw UI.
-	* Games
-	* Map
-		- IDK.
-		- Don't need for just 1 city.
+	- Examples
+		- City
+			- Player moves in an N x N grid.
+			- Need to listen to live input.
+			- Draw BG & FG.
+		- Arena
+			- Player chooses moves in UI.
+			- No need to listen to any live input!
+				* but we can, if we want to listen to arrow key presses.
+			- Draw UI.
+		- Market
+			- Player interacts with UI
+			- No need to listen to any live input!
+				* but we can, if we want to listen to arrow key presses.
+			- Draw UI.
+		- Games
+		- Map
+			- IDK.
+			- Don't need for just 1 city.
