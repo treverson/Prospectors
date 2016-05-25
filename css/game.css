@@ -2,6 +2,10 @@ body {
 	font-family: 'Press Start 2P', cursive;
 }
 
+.center-text {
+	text-align: center;
+}
+
 .background {
 	background: rgb(52, 166, 251);
     table-layout: fixed;
