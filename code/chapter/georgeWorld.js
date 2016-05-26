@@ -35,6 +35,38 @@ Implementation notes:
 	- Step takes current time and user input and adjust actors accordingly.
 */
 
+/*
+	createEventListeners and runAnimation are utility functions that should be in their own module
+*/
+var createEventListeners = function(codes) {
+	var pressed = Object.create(null);
+	function handler(event) {
+		if (codes.hasOwnProperty(event.keyCode)) {
+			var down = event.type == 'keydown';
+			pressed[codes[event.keyCode]] = down;
+			event.preventDefault();
+		}
+	}
+	addEventListener('keydown', handler);
+	addEventListener('keyup', handler);
+	return pressed;
+};
+
+var runAnimation = function(frameFunc) {
+	var lastTime = null; // Time since animation started
+	function frame(time) {
+		var stop = false;
+		if (lastTime != null) {
+			var timeStep = Math.min(time - lastTime, 100) / 1000; 
+			stop = frameFunc(timeStep) === false; // If the frameFunc returns false, stop animation.
+		}
+		lastTime = time;
+		if (!stop) {
+			requestAnimationFrame(frame);
+		}
+	}
+	requestAnimationFrame(frame);
+};
 
 /*
 	World interface
@@ -44,90 +76,77 @@ var World = function() {
 	// Idea: create an array of functions that need to be created?
 
 	// Return initial DOM element to attach OR -- Do stepping...?
-	this.init = function(display, rootEl) { /* Requires implementation */ };
+	this.init = function(display) { /* Requires implementation */ };
 	// A step in the function with time = t
 	this.step = function(time, input) { /* Requires implementation */ };
 	// The background layer to draw once
-	this.backgroundLayer = function() { /* Requires implementation */ };
+	this.createBackgroundLayer = function() { /* Requires implementation */ };
 	// The actors to draw each iteration
 	this.createActors = function() { /* Requires implementation */ };
 	this.actors = [];
+	this.display;
+	this.keyCodes;
+	this.keys;
 };
 
 var Prospectors = function() {};
-Prospectors.prototype = Object.create(World);
-Prospectors.prototype.init = function(display, rootEl) {
+Prospectors.prototype.init = function(display) {
+	this.prototype = Object.create(World);
 
-	var runAnimation = function(frameFunc) {
-		var lastTime = null;
-		function frame(time) {
-			var stop = false;
-			if (lastTime != null) {
-				var timeStep = Math.min(time - lastTime, 100) / 1000;
-				stop = frameFunc(timeStep) === false;
-			}
-			lastTime = time;
-			if (!stop)
-				requestAnimationFrame(frame);
-		}
-		requestAnimationFrame(frame);
-	};
+	// Send elements to Display to draw.
+	this.display = display;
 
+	// The keys we care about.
+	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
+
+	// Initializes our this.actors
 	this.createActors();
-	this.drawBackground();
-	this.drawActors();
-	var keys = this.createEventListeners();
-	var start = Date.now();
 
-	while (Date.now() - start < 1000) {
-		this.step(Date.now(), keys);
-	}
-	console.log(this.actors);
+	// Draw initial frame
+	this.display.drawBackground(this.createBackgroundLayer());
+	this.display.drawActors(this.actors);
+
+	// Not sure what this number means exactly but we need it.
+	this.stepDuration = 0.1;
+
+	// Variable to decide how often we listen to the input, will be used in this.step.
+	// this.minStep = 100;
+
+	// What keys were last pressed?
+	this.keys = createEventListeners(this.keyCodes); // This is a higher-level variable --> We want access to it outside the World (later).
+
+	var lastTime = Date.now();
+
+	// Reference to this.
+	var thisP = this;
+
+	// Begin animation
+	runAnimation(function(step) {
+		thisP.step(step);
+		thisP.display.drawFrame();
+	});
 };
 
 /*
 	step
-	- Takes current time and user input,
+	- Takes current time and checks user input.
 	- Modifies actors based on these variables.
 */
-Prospectors.prototype.step = function(time, input) {
-	for (k in input) {
-		if (input[k]) {
+Prospectors.prototype.step = function(step) {
+	for (var k in this.keys) {
+		if (this.keys[k]) {
 			console.log(k);
 		}
 	}
-};
-
-Prospectors.prototype.drawActors = function() {
-
-};
-
-Prospectors.prototype.drawBackground = function() {
-
-};
-
-Prospectors.prototype.createEventListeners = function() {
-	var arrowCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
-
-	function trackKeys(codes) {
-		var pressed = Object.create(null);
-		function handler(event) {
-			if (codes.hasOwnProperty(event.keyCode)) {
-				var down = event.type == 'keydown';
-				pressed[codes[event.keyCode]] = down;
-				event.preventDefault();
-			}
-		}
-		addEventListener('keydown', handler);
-		addEventListener('keyup', handler);
-		return pressed;
+	while (step > 0) {
+		this.actors.forEach(function(actor) {
+			actor.act(this.keys);
+		}, this);
+		step -= this.stepDuration;
 	}
-
-	return trackKeys(arrowCodes);
-
 };
 
-Prospectors.prototype.backgroundLayer = function() {
+Prospectors.prototype.createBackgroundLayer = function() {
 
 };
 
@@ -136,7 +155,15 @@ Prospectors.prototype.createActors = function() {
 	this.actors = [];
 };
 
-var Display = function() {
+var Display = function(parent) {
+
+	this.wrap;
+	this.backgroundLayer;
+	this.actorLayor;
+
+	this.init = function() {
+		this.wrap = parent.appendChild(this.create('div', 'game'));
+	};
 
 	// Create a new DOM element.
 	this.create = function (name, className) {
@@ -146,12 +173,31 @@ var Display = function() {
 		}
 		return elt;	
 	};
+
+	this.drawFrame = function() {
+		this.removeActors();
+		this.drawActors();
+	};
+
+	this.drawBackground = function(backgroundLayer) {
+		// create an element and save it as this.backgroundLayer
+	}
+
+	this.drawActors = function() {
+		// Draw actors, save in this.actorLayor
+		// The actorLayer, I guess, should be an element super-imposed on the backgroundLayer element.
+	};
+
+	this.removeActors = function() {
+		// Remove actors
+		// I'm thinking Display should take a World because then the Display can operate on a generic World.
+	};
+
+	this.init();
 };
 
 var main = function(world) {
-	var state = world; // hmm.. let's worry about this later.
-	var display = new Display();
-	var rootEl = 'main';
-	world.init(display, rootEl);
+	var display = new Display(document.body, world);
+	world.init(display);
 
 };
