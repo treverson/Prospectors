@@ -99,6 +99,12 @@ Prospectors.prototype.init = function(display) {
 	// The keys we care about.
 	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
 
+	// The positions of all the actors
+	this.actorGrid = [];
+
+	this.width = 20;
+	this.height = 20;
+
 	// Initializes our this.actors
 	this.createActors();
 
@@ -131,28 +137,65 @@ Prospectors.prototype.init = function(display) {
 	step
 	- Takes current time and checks user input.
 	- Modifies actors based on these variables.
+	- wowwwwwwwwwwwwwwwwwwwwwww I really don't need to do steps for non-realtime animation.
 */
 Prospectors.prototype.step = function(step) {
-	for (var k in this.keys) {
-		if (this.keys[k]) {
-			console.log(k);
-		}
-	}
 	while (step > 0) {
-		this.actors.forEach(function(actor) {
-			actor.act(this.keys);
-		}, this);
+		// Might instead want to go bottom left to top right, so we can create falling block chains.
+		for (var j = this.height - 1; j >= 0; j-- ) {
+			for (var i = this.width - 1; i >= 0; i--) {
+				this.actors[i][j].act(this.actors);
+			}
+		}
 		step -= this.stepDuration;
 	}
 };
 
 Prospectors.prototype.createBackgroundLayer = function() {
-
+	// Nothing to do.
 };
 
 Prospectors.prototype.createActors = function() {
-	console.log('create actors');
 	this.actors = [];
+	for(var i = 0; i < this.width; i++) {
+		var actorGridRow = [];
+		for(var j = 0; j < this.height; j++) {
+			actorGridRow.push(new Block(this, i, j));
+		}
+		this.actors.push(actorGridRow);
+	}
+};
+
+Prospectors.prototype.swap = function(x1, y1, x2, y2) {
+
+	this.actors[x1][y1].x = x2;
+	this.actors[x1][y1].y = y2;
+	this.actors[x2][y2].x = x1;
+	this.actors[x2][y2].y = y1;
+
+	var t = this.actors[x1][y1];
+	this.actors[x1][y1] = this.actors[x2][y2];
+	this.actors[x2][y2] = t;
+};
+
+var Block = function(world, x, y, type) {
+	this.world = world;
+	this.x = x;
+	this.y = y;	
+	this.type = type || 'basic';
+
+	this.act = function() {
+		if (this.type !== 'empty') {
+			if (world.actors[this.x][this.y + 1].type === 'empty') {
+				world.swap(this.x, this.y, this.x, (this.y + 1));
+			}
+		}
+	};
+
+	this.update = function(x, y) {
+		this.x = x;
+		this.y = y;
+	};
 };
 
 var Display = function(parent) {
