@@ -22,9 +22,14 @@ body {
 	border: 1px solid #fff;
 }
 
+.actor-layer {
+	position: relative;
+}
+
 .block {
 	border: 1px solid #fff;
 	background-color: #ccc;
+	position: absolute;
 }
 
 .player {
@@ -39,7 +44,6 @@ body {
 
 .game {
   padding: 60px;
-  width: 775px;
   margin: 0 auto; 
 }
 

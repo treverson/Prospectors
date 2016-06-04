@@ -74,6 +74,17 @@ var runAnimation = function(frameFunc) {
 	requestAnimationFrame(frame);
 };
 
+var DOM = {
+	// Create a new DOM element.
+	create: function (name, className) {
+		var elt = document.createElement(name);
+		if (className) {
+			elt.className = className;
+		}
+		return elt;	
+	}
+};
+
 /*
 	World interface
 	- defines methods we need to create when adding a new world.
@@ -102,17 +113,26 @@ Prospectors.prototype.init = function(display) {
 	// Send elements to Display to draw.
 	this.display = display;
 
-	// The keys we care about.
+	// The keys we care about. These are examples at the moment.
 	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
 
+	// The state of the game. Options include:
+	// 'building'	--> Player is placing dynamite on the map.
+	// 'acting'		--> Animation is occurring (actors are acting).
+	this.gameState = 'building';
+
 	// The positions of all the actors
-	this.actorGrid = [];
+	this.actors;
 
 	this.width = 20;
 	this.height = 20;
+	this.scale = 30;
 
 	// Initializes our this.actors
 	this.createActors();
+
+	// Initialize display
+	this.display.init();
 
 	// Draw initial frame
 	this.display.drawBackground(this.createBackgroundLayer());
@@ -134,8 +154,8 @@ Prospectors.prototype.init = function(display) {
 
 	// Begin animation
 	runAnimation(function(step) {
-		thisP.step(step);
-		thisP.display.drawFrame();
+		// thisP.step(step);
+		// thisP.display.drawFrame();
 	});
 };
 
@@ -147,10 +167,9 @@ Prospectors.prototype.init = function(display) {
 */
 Prospectors.prototype.step = function(step) {
 	while (step > 0) {
-		// Might instead want to go bottom left to top right, so we can create falling block chains.
-		for (var j = this.height - 1; j >= 0; j-- ) {
-			for (var i = this.width - 1; i >= 0; i--) {
-				this.actors[i][j].act(this.actors);
+		for (var i = 0; i < this.width; i++ ) {
+			for (var j = 0; j < this.height; j++) {
+				this.actors[i][j].act();
 			}
 		}
 		step -= this.stepDuration;
@@ -184,18 +203,47 @@ Prospectors.prototype.swap = function(x1, y1, x2, y2) {
 	this.actors[x2][y2] = t;
 };
 
+Prospectors.prototype.dropBlocksTo = function(x, y) {
+	// Drop every block above this y down a position.
+	// Reduce integrity of base?
+};
+
 var Block = function(world, x, y, type) {
 	this.world = world;
 	this.x = x;
 	this.y = y;	
 	this.type = type || 'basic';
+	this.integrity = 100;
+	this.buildBlockEl = function() {
+		var classes = [
+			'block',
+			this.type,
+			'integrity-' + Math.floor(this.integrity).toString()
+		];
+		var el = DOM.create('div', classes.join(' '));
+		el.style.width = this.world.scale + 'px';
+		el.style.height = this.world.scale + 'px';
+		el.style.left = this.x * this.world.scale + 'px';
+		el.style.top = this.y * this.world.scale + 'px';
+
+		return el;
+	};
+	this.blockEl = this.buildBlockEl();
 
 	this.act = function() {
-		if (this.type !== 'empty') {
-			if (world.actors[this.x][this.y + 1].type === 'empty') {
-				world.swap(this.x, this.y, this.x, (this.y + 1));
-			}
+		if (this.type === 'empty') {
+			// Blocks above must fall.
+			this.world.dropBlocksTo(this.x, this.y);
+		} else if (this.type === 'dynamite') {
+			this.explode();
+			// Explode, then blocks above must fall.
+		} else {
+			// Nothing.
 		}
+	};
+
+	this.explode = function() {
+		this.world.dropBlocksTo(this.x, this.y);
 	};
 
 	this.update = function(x, y) {
@@ -204,28 +252,25 @@ var Block = function(world, x, y, type) {
 	};
 };
 
-var Display = function(parent) {
+var Display = function(parent, world) {
 
+	this.parent = parent;
+	this.world = world;
 	this.wrap;
+	this.game;
 	this.backgroundLayer;
-	this.actorLayor;
+	this.actorLayer;
 
 	this.init = function() {
-		this.wrap = parent.appendChild(this.create('div', 'game'));
-	};
-
-	// Create a new DOM element.
-	this.create = function (name, className) {
-		var elt = document.createElement(name);
-		if (className) {
-			elt.className = className;
-		}
-		return elt;	
+		this.game = DOM.create('div', 'game');
+		this.game.style.width = (this.world.scale * this.world.width) + 'px';
+		this.game.style.height = (this.world.scale * this.world.height) + 'px';
+		this.wrap = this.parent.appendChild(this.game);
 	};
 
 	this.drawFrame = function() {
-		this.removeActors();
-		this.drawActors();
+		// this.removeActors();
+		// this.drawActors();
 	};
 
 	this.drawBackground = function(backgroundLayer) {
@@ -235,18 +280,22 @@ var Display = function(parent) {
 	this.drawActors = function() {
 		// Draw actors, save in this.actorLayor
 		// The actorLayer, I guess, should be an element super-imposed on the backgroundLayer element.
+		this.actorLayer = DOM.create('div', 'actor-layer');
+		for (var i = 0; i < this.world.width; i++) {
+			for (var j = 0; j < this.world.height; j++) {
+				this.actorLayer.appendChild(this.world.actors[i][j].blockEl);
+			}
+		}
+		this.game.appendChild(this.actorLayer);
 	};
 
 	this.removeActors = function() {
 		// Remove actors
 		// I'm thinking Display should take a World because then the Display can operate on a generic World.
 	};
-
-	this.init();
 };
 
 var main = function(world) {
 	var display = new Display(document.body, world);
 	world.init(display);
-
 };
