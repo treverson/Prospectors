@@ -33,6 +33,12 @@ Implementation notes:
 		- Initial actor state
 		- Event listeners
 	- Step takes current time and user input and adjust actors accordingly.
+
+Library
+	- One goal of this project is to create a platform, or library, to which worlds can be attached.
+	- That is, we want to create a base framework and then be able to send arbitrary worlds to it to be run and displayed on the screen.
+	- How to accomplish this?
+	- First step is creating an example world or two and being able to run them. Then the common elements can be factored out.
 */
 
 /*
