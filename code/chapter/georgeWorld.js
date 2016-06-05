@@ -39,6 +39,11 @@ Library
 	- That is, we want to create a base framework and then be able to send arbitrary worlds to it to be run and displayed on the screen.
 	- How to accomplish this?
 	- First step is creating an example world or two and being able to run them. Then the common elements can be factored out.
+
+Other Notes
+	- Have a certain number of pets
+	- When the player isn't active, the pets can be set to do work (such as mining or crafting).
+	- They will passively generate materials that can be crafted into other things.
 */
 
 /*
@@ -107,11 +112,13 @@ var World = function() {
 };
 
 var Prospectors = function() {};
-Prospectors.prototype.init = function(display) {
+Prospectors.prototype.init = function(display, player) {
 	this.prototype = Object.create(World);
 
 	// Send elements to Display to draw.
 	this.display = display;
+
+	this.player = player;
 
 	// The keys we care about. These are examples at the moment.
 	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
@@ -129,6 +136,8 @@ Prospectors.prototype.init = function(display) {
 	this.width = 20;
 	this.height = 20;
 	this.scale = 30;
+
+	this.randomPlayNum = 5;
 
 	// Initializes our this.actors
 	this.createActors();
@@ -211,7 +220,64 @@ Prospectors.prototype.getItem = function() {
 // };
 
 Prospectors.prototype.createBackgroundLayer = function() {
-	// Nothing to do.
+	// Create menu
+	var menu = DOM.create('div', 'menu');
+	var play = DOM.create('button', 'clickable button norm-play');
+	play.innerHTML = 'PLAY';
+	play.onclick = function() {
+		console.log('play');
+	};
+	var randomPlayWrapper = DOM.create('div', 'rand-play-wrapper');
+	var randomPlay = DOM.create('button', 'clickable button rand-play');
+	randomPlay.innerHTML = 'RANDOM PLAY';
+	randomPlay.onclick = function() {
+		console.log('rand play');
+	};
+
+	// Display randomPlayNum
+	var randomPlayNumEl = DOM.create('div', 'rand-play-num');
+	randomPlayNumEl.innerHTML = this.randomPlayNum.toString();
+
+	// Increment randomPlayNum button
+	var upTriangle = DOM.create('a', 'clickable button up-triangle');
+	var upClick = function(self) {
+		return function() {
+			if (self.randomPlayNum < self.player.numExplosives) {
+				self.randomPlayNum += 1;
+				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomPlayNum.toString();
+			}
+		};
+	};
+	upTriangle.onclick = upClick(this);
+
+	// Decrement randomPlayNum button
+	var downTriangle = DOM.create('a', 'clickable button down-triangle');
+	var downClick = function(self) {
+		return function() {
+			if (self.randomPlayNum > 1) {
+				self.randomPlayNum -= 1;
+				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomPlayNum.toString();
+			}
+		};
+	}
+	downTriangle.onclick = downClick(this);
+
+	// Container for increment/decrement buttons
+	var triangleContainer = DOM.create('div', 'triangle-container');
+	triangleContainer.appendChild(upTriangle);
+	triangleContainer.appendChild(downTriangle);
+
+	var randomPlayNumContainer = DOM.create('div', 'rand-play-num-container');
+	randomPlayNumContainer.appendChild(randomPlayNumEl);
+	randomPlayNumContainer.appendChild(triangleContainer);
+
+	randomPlayWrapper.appendChild(randomPlay);
+	randomPlayWrapper.appendChild(randomPlayNumContainer);
+
+	menu.appendChild(play);
+	menu.appendChild(randomPlayWrapper);
+	menu.style.width = (this.scale * this.width) + 'px';
+	return menu;
 };
 
 Prospectors.prototype.createActors = function() {
@@ -271,6 +337,7 @@ var Block = function(world, x, y, type) {
 	this.buildBlockEl = function(self) {
 		var classes = [
 			'block',
+			'clickable',
 			this.type,
 			'integrity-' + Math.floor(this.integrity).toString()
 		];
@@ -370,6 +437,16 @@ var Block = function(world, x, y, type) {
 	};
 };
 
+var Player = function() {
+	this.numExplosives = 20;
+	this.loot = [];
+
+	// Show or hide the player's inventory.
+	this.toggleInventory = function() {
+		// Implement
+	};
+};
+
 var Display = function(parent, world) {
 
 	this.wrap;
@@ -378,20 +455,22 @@ var Display = function(parent, world) {
 	this.actorLayer;
 
 	this.init = function() {
+		this.wrap = DOM.create('div', 'game-wrapper');
 		this.game = DOM.create('div', 'game');
 		this.game.style.width = (world.scale * world.width) + 'px';
 		this.game.style.height = (world.scale * world.height) + 'px';
-		this.wrap = parent.appendChild(this.game);
+		this.wrap.appendChild(this.game);
+		this.wrap = parent.appendChild(this.wrap);
 	};
 
 	this.drawFrame = function() {
-		// this.removeActors();
-		// this.drawActors();
+		// Implement
 	};
 
 	this.drawBackground = function(backgroundLayer) {
+		this.wrap.appendChild(backgroundLayer);
 		// create an element and save it as this.backgroundLayer
-	}
+	};
 
 	this.drawActors = function() {
 		// Draw actors, save in this.actorLayer
@@ -413,5 +492,6 @@ var Display = function(parent, world) {
 
 var main = function(world) {
 	var display = new Display(document.body, world);
-	world.init(display);
+	var player = new Player();
+	world.init(display, player);
 };

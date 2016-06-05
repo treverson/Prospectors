@@ -6,6 +6,11 @@ body {
 	text-align: center;
 }
 
+.clickable {
+	cursor: pointer;
+	cursor: hand;
+}
+
 .background {
 	background: rgb(52, 166, 251);
     table-layout: fixed;
@@ -27,6 +32,100 @@ body {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
+}
+
+.menu {
+	margin: 0 auto;
+	display: table;
+}
+
+.menu > * {
+	/*display: inline;*/
+	vertical-align: middle;
+}
+
+.rand-play-wrapper {
+	float: right;
+}
+
+.rand-play-wrapper > * {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.rand-play {
+	margin-right: 30px;
+}
+
+.rand-play-num {
+	font-size: 18px;
+	margin-right: 20px;
+}
+
+.rand-play-num-container {
+	background-color: rgba(163,173,184,1);
+	border-radius: 30px;
+	padding: 6px 30px;
+}
+
+.rand-play-num-container > * {
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.triangle-container > * {
+	display: block;
+	opacity: 0.65;
+}
+
+.triangle-container > *:active {
+	opacity: 1;
+}
+
+button.button {
+	font-family: 'Press Start 2P', cursive;
+    border: 0;
+    box-shadow: none;
+    padding: 15px 30px;
+    border-radius: 30px;
+    color: #FFF;
+    box-shadow: inset 0 0 0 1px #27496d;
+    text-shadow: -2px 2px #333;
+    transition: box-shadow 0.35s ease;
+}
+
+.up-triangle {
+	width: 0; 
+	height: 0; 
+	border-left: 12px solid transparent;
+	border-right: 12px solid transparent;
+	border-bottom: 12px solid black;
+}
+
+.down-triangle {
+	width: 0; 
+	height: 0; 
+	border-left: 12px solid transparent;
+	border-right: 12px solid transparent;
+	border-top: 12px solid black;
+	margin-top: 6px;
+}
+
+button.button:hover {
+	box-shadow: inset 0 0 0 1px #27496d,0 1px 1px #193047;
+}
+
+button.button:active {
+	box-shadow: inset 0 0 0 1px #27496d,inset 0 3px 20px #193047;
+}
+
+button.button.norm-play {
+	/*margin: 3px;*/
+	background-color: rgba(78,97,114,1);
+}
+
+button.button.rand-play {
+	background-color: rgba(97,51,24,1);
 }
 
 .block {
