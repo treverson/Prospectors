@@ -120,10 +120,12 @@ Prospectors.prototype.init = function(display) {
 	// 'building'	--> Player is placing dynamite on the map.
 	// 'acting'		--> Animation is occurring (actors are acting).
 	this.gameState = 'building';
+	this.eventQueue = [];
 
 	// The positions of all the actors
 	this.actors;
 
+	// Game size variables.
 	this.width = 20;
 	this.height = 20;
 	this.scale = 30;
@@ -149,32 +151,64 @@ Prospectors.prototype.init = function(display) {
 
 	var lastTime = Date.now();
 
-	// Reference to this.
-	var thisP = this;
+	// // Reference to this.
+	// var self = this;
 
-	// Begin animation
-	runAnimation(function(step) {
-		// thisP.step(step);
-		// thisP.display.drawFrame();
-	});
+	// // Begin animation
+	// runAnimation(function(step) {
+	// 	self.step(step);
+	// 	self.display.drawFrame();
+	// });
+};
+
+Prospectors.prototype.getItem = function() {
+
+	// 'mult' is a the relative chance of getting this item over another.
+	// To pick an item, divide 1 by the sum of all the multipliers. Figure it out...
+	var mkItem = function(name, mult) {
+		return {
+			name: name,
+			mult: mult
+		};
+	};
+
+	// Items will eventually be passed in from outside the game (from the universe).
+	var items = [
+		mkItem('blast-powder', 200),
+		mkItem('coin', 100),
+		mkItem('quartz', 30),
+		mkItem('metal-scraps', 140)
+	];
+
+	var rand = Math.random();
+	var multTotal = items.reduce(function(prev, curr) { // Total multiplier
+		return prev + curr.mult;
+	}, 0);
+	var inverseMultTotal = 1 / multTotal; // Inverse to create ratios with.
+	var runningTotal = 0; // Keep track of previous work.
+	for (var i = 0; i < items.length; i++) {
+		runningTotal += items[i].mult;
+		if (rand < (runningTotal * inverseMultTotal)) {
+			return items[i].name;
+		}
+	}
+	return null; // Should not reach this!
 };
 
 /*
 	step
-	- Takes current time and checks user input.
-	- Modifies actors based on these variables.
-	- wowwwwwwwwwwwwwwwwwwwwwww I really don't need to do steps for non-realtime animation.
+	- Don't really need this right now.
 */
-Prospectors.prototype.step = function(step) {
-	while (step > 0) {
-		for (var i = 0; i < this.width; i++ ) {
-			for (var j = 0; j < this.height; j++) {
-				this.actors[i][j].act();
-			}
-		}
-		step -= this.stepDuration;
-	}
-};
+// Prospectors.prototype.step = function(step) {
+// 	while (step > 0) {
+// 		for (var i = 0; i < this.width; i++ ) {
+// 			for (var j = 0; j < this.height; j++) {
+// 				this.actors[i][j].act();
+// 			}
+// 		}
+// 		step -= this.stepDuration;
+// 	}
+// };
 
 Prospectors.prototype.createBackgroundLayer = function() {
 	// Nothing to do.
@@ -191,49 +225,74 @@ Prospectors.prototype.createActors = function() {
 	}
 };
 
-Prospectors.prototype.swap = function(x1, y1, x2, y2) {
+/*
+Shift instead of swap.
+Randomly generate an event from the removed block and add it to the event queue!
+Then delete the block, shift the rest down, and fill in a new block.
+*/
+Prospectors.prototype.swap = function(start, end) {
 
-	this.actors[x1][y1].x = x2;
-	this.actors[x1][y1].y = y2;
-	this.actors[x2][y2].x = x1;
-	this.actors[x2][y2].y = y1;
+	this.actors[start.x][start.y].updateCoords(end.x, end.y);
+	this.actors[end.x][end.y].updateCoords(start.x, start.y);
 
-	var t = this.actors[x1][y1];
-	this.actors[x1][y1] = this.actors[x2][y2];
-	this.actors[x2][y2] = t;
+	var t = this.actors[start.x][start.y];
+	this.actors[start.x][start.y] = this.actors[end.x][end.y];
+	this.actors[end.x][end.y] = t;
+
+};
+
+Prospectors.prototype.shift = function(start, end) {
+
+	this.actors[start.x][start.y].updateCoords(end.x, end.y);
+	this.actors[end.x][end.y] = this.actors[start.x][start.y];
+
 };
 
 Prospectors.prototype.dropBlocksTo = function(x, y) {
 	// Drop every block above this y down a position.
 	// Reduce integrity of base?
+	var start, end;
+	for(var j = y-1; j >= 0; j--) {
+		start = { x: x, y: j };
+		end = { x: x, y: j + 1 };
+		this.swap(start, end);
+	}
+	// Drop in the block that was destroyed.
+	var dropBlock = function (block) {
+		setTimeout(block.fallIn(block), 0);
+	}(this.actors[x][0]);
 };
 
 var Block = function(world, x, y, type) {
-	this.world = world;
 	this.x = x;
-	this.y = y;	
+	this.y = y;
 	this.type = type || 'basic';
 	this.integrity = 100;
-	this.buildBlockEl = function() {
+	this.buildBlockEl = function(self) {
 		var classes = [
 			'block',
 			this.type,
 			'integrity-' + Math.floor(this.integrity).toString()
 		];
 		var el = DOM.create('div', classes.join(' '));
-		el.style.width = this.world.scale + 'px';
-		el.style.height = this.world.scale + 'px';
-		el.style.left = this.x * this.world.scale + 'px';
-		el.style.top = this.y * this.world.scale + 'px';
+		el.style.width = world.scale + 'px';
+		el.style.height = world.scale + 'px';
+		el.style.left = this.x * world.scale + 'px';
+		el.style.top = this.y * world.scale + 'px';
+		el.onclick = function() {
+			self.explode();
+		};
 
 		return el;
 	};
-	this.blockEl = this.buildBlockEl();
+
+	this.blockEl = this.buildBlockEl(this);
 
 	this.act = function() {
 		if (this.type === 'empty') {
 			// Blocks above must fall.
-			this.world.dropBlocksTo(this.x, this.y);
+			this.blockEl.style.display = 'none';
+			world.dropBlocksTo(this.x, this.y);
 		} else if (this.type === 'dynamite') {
 			this.explode();
 			// Explode, then blocks above must fall.
@@ -242,20 +301,77 @@ var Block = function(world, x, y, type) {
 		}
 	};
 
-	this.explode = function() {
-		this.world.dropBlocksTo(this.x, this.y);
+	this.updateBlockCoords = function() {
+		this.blockEl.style.left = (world.scale * this.x) + 'px';
+		this.blockEl.style.top = (world.scale * this.y) + 'px';
 	};
 
-	this.update = function(x, y) {
+	this.explode = function() {
+		var drop = this.makeDrop();
+		console.log(drop);
+		if (drop) {
+			world.eventQueue.unshift(drop);
+		}
+		this.hideBlock();
+		
+		// As elsewhere, this is just for effect.
+		// Better: Create a "wrapperFunc"-building function!
+		// Would somehow need to take the arguments and include them in scope.
+		var wrapperFunc = function(x, y) {
+			setTimeout(function() {
+				world.dropBlocksTo(x, y);
+			}, 50);
+		}(this.x, this.y)
+	};
+
+	this.hideBlock = function() {
+		this.type = 'empty';
+		this.blockEl.style.display = 'none';
+	};
+
+	this.showBlock = function() {
+		this.type = this.chooseNewType();
+		this.blockEl.style.display = 'block';
+	};
+
+	this.chooseNewType = function() {
+		return 'basic';
+	};
+
+	this.fallIn = function(self) {
+		return function() {
+			self.updateCoords(self.x, -1);
+			self.showBlock();
+			setTimeout(function(){
+				self.updateCoords(self.x, 0);
+			}, 50);
+		};
+	};
+
+	this.makeDrop = function() {
+		// For now, all possible types have an associated drop chance.
+		// This is too simplistic and needs to be fleshed out, but could work for testing.
+		var possibleTypes = {
+			'basic': 0.1
+		};
+
+		var rand = Math.random();
+		if (rand < possibleTypes[this.type]) {
+			return world.getItem();
+		} else {
+			return false;
+		}
+	};
+
+	this.updateCoords = function(x, y) {
 		this.x = x;
 		this.y = y;
+		this.updateBlockCoords();
 	};
 };
 
 var Display = function(parent, world) {
 
-	this.parent = parent;
-	this.world = world;
 	this.wrap;
 	this.game;
 	this.backgroundLayer;
@@ -263,9 +379,9 @@ var Display = function(parent, world) {
 
 	this.init = function() {
 		this.game = DOM.create('div', 'game');
-		this.game.style.width = (this.world.scale * this.world.width) + 'px';
-		this.game.style.height = (this.world.scale * this.world.height) + 'px';
-		this.wrap = this.parent.appendChild(this.game);
+		this.game.style.width = (world.scale * world.width) + 'px';
+		this.game.style.height = (world.scale * world.height) + 'px';
+		this.wrap = parent.appendChild(this.game);
 	};
 
 	this.drawFrame = function() {
@@ -278,12 +394,12 @@ var Display = function(parent, world) {
 	}
 
 	this.drawActors = function() {
-		// Draw actors, save in this.actorLayor
+		// Draw actors, save in this.actorLayer
 		// The actorLayer, I guess, should be an element super-imposed on the backgroundLayer element.
 		this.actorLayer = DOM.create('div', 'actor-layer');
-		for (var i = 0; i < this.world.width; i++) {
-			for (var j = 0; j < this.world.height; j++) {
-				this.actorLayer.appendChild(this.world.actors[i][j].blockEl);
+		for (var i = 0; i < world.width; i++) {
+			for (var j = 0; j < world.height; j++) {
+				this.actorLayer.appendChild(world.actors[i][j].blockEl);
 			}
 		}
 		this.game.appendChild(this.actorLayer);

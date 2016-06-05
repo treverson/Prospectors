@@ -24,12 +24,19 @@ body {
 
 .actor-layer {
 	position: relative;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
 }
 
 .block {
+	box-sizing: border-box;
 	border: 1px solid #fff;
 	background-color: #ccc;
 	position: absolute;
+	transition: all 0.5s ease;
+	-webkit-transition: all 0.5s ease;
+	-moz-transition: all 0.5s ease;
 }
 
 .player {
