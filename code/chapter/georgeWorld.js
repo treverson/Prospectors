@@ -87,6 +87,12 @@ var DOM = {
 			elt.className = className;
 		}
 		return elt;	
+	},
+
+	style: function(el, styles) {
+		for (var k in styles) {
+			el.style[k] = styles[k];
+		}
 	}
 };
 
@@ -128,6 +134,7 @@ Prospectors.prototype.init = function(display, player) {
 	// 'acting'		--> Animation is occurring (actors are acting).
 	this.gameState = 'building';
 	this.eventQueue = [];
+	this.markedActors = [];
 
 	// The positions of all the actors
 	this.actors;
@@ -142,7 +149,7 @@ Prospectors.prototype.init = function(display, player) {
 	// Initializes our this.actors
 	this.createActors();
 
-	// Initialize display
+	// Initialize display.
 	this.display.init();
 
 	// Draw initial frame
@@ -219,6 +226,10 @@ Prospectors.prototype.getItem = function() {
 // 	}
 // };
 
+Prospectors.prototype.mark = function(x, y) {
+	this.markedActors.push({ x: x, y: y });
+};
+
 Prospectors.prototype.createBackgroundLayer = function() {
 	// Create menu
 	var menu = DOM.create('div', 'menu');
@@ -276,7 +287,9 @@ Prospectors.prototype.createBackgroundLayer = function() {
 
 	menu.appendChild(play);
 	menu.appendChild(randomPlayWrapper);
-	menu.style.width = (this.scale * this.width) + 'px';
+	DOM.style(menu, {
+		width: (this.scale * this.width) + 'px'
+	});
 	return menu;
 };
 
@@ -330,10 +343,12 @@ Prospectors.prototype.dropBlocksTo = function(x, y) {
 };
 
 var Block = function(world, x, y, type) {
+	this.world = world;
 	this.x = x;
 	this.y = y;
 	this.type = type || 'basic';
 	this.integrity = 100;
+	this.marked = false;
 	this.buildBlockEl = function(self) {
 		var classes = [
 			'block',
@@ -342,12 +357,21 @@ var Block = function(world, x, y, type) {
 			'integrity-' + Math.floor(this.integrity).toString()
 		];
 		var el = DOM.create('div', classes.join(' '));
-		el.style.width = world.scale + 'px';
-		el.style.height = world.scale + 'px';
-		el.style.left = this.x * world.scale + 'px';
-		el.style.top = this.y * world.scale + 'px';
+		DOM.style(el, {
+			width: world.scale + 'px',
+			height: world.scale + 'px',
+			left: this.x * world.scale + 'px',
+			top: this.y * world.scale + 'px'
+			});
 		el.onclick = function() {
-			self.explode();
+			//self.explode();
+			if (!self.marked) {
+				self.world.mark(self.x, self.y);
+				self.mark();
+			} else {
+				self.unmark();
+				self.world.unmark(self.x, self.y);
+			}
 		};
 
 		return el;
@@ -355,10 +379,30 @@ var Block = function(world, x, y, type) {
 
 	this.blockEl = this.buildBlockEl(this);
 
+	this.mark = function() {
+		this.marked = true;
+		console.log('mark');
+		DOM.style(this.blockEl, {
+			backgroundImage: 'url("image/dynamite.png")',
+			boxShadow: 'inset 0 0 0 1px rgba(143,59,27,0.9),inset 0 2px 5px rgba(143,59,27,0.8)'
+		});
+	};
+
+	this.unmark = function() {
+		console.log('unmark');
+		this.marked = false;
+		DOM.style(this.blockEl, {
+			backgroundImage: 'none',
+			boxShadow: 'inset 0 0 2px 0px #27496d'
+		});
+	};
+
 	this.act = function() {
 		if (this.type === 'empty') {
 			// Blocks above must fall.
-			this.blockEl.style.display = 'none';
+			DOM.style(this.blockEl, {
+				display: 'none'
+			});
 			world.dropBlocksTo(this.x, this.y);
 		} else if (this.type === 'dynamite') {
 			this.explode();
@@ -369,8 +413,10 @@ var Block = function(world, x, y, type) {
 	};
 
 	this.updateBlockCoords = function() {
-		this.blockEl.style.left = (world.scale * this.x) + 'px';
-		this.blockEl.style.top = (world.scale * this.y) + 'px';
+		DOM.style(this.blockEl, {
+			left: (world.scale * this.x) + 'px',
+			top: (world.scale * this.y) + 'px'
+		});
 	};
 
 	this.explode = function() {
@@ -392,13 +438,17 @@ var Block = function(world, x, y, type) {
 	};
 
 	this.hideBlock = function() {
+		DOM.style(this.blockEl, {
+			display: 'none'
+		});
 		this.type = 'empty';
-		this.blockEl.style.display = 'none';
 	};
 
 	this.showBlock = function() {
 		this.type = this.chooseNewType();
-		this.blockEl.style.display = 'block';
+		DOM.style(this.blockEl, {
+			display: 'block'
+		});
 	};
 
 	this.chooseNewType = function() {
@@ -457,8 +507,10 @@ var Display = function(parent, world) {
 	this.init = function() {
 		this.wrap = DOM.create('div', 'game-wrapper');
 		this.game = DOM.create('div', 'game');
-		this.game.style.width = (world.scale * world.width) + 'px';
-		this.game.style.height = (world.scale * world.height) + 'px';
+		DOM.style(this.game, {
+			width: (world.scale * world.width) + 'px',
+			height: (world.scale * world.height) + 'px'
+		})
 		this.wrap.appendChild(this.game);
 		this.wrap = parent.appendChild(this.wrap);
 	};
