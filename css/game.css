@@ -60,6 +60,8 @@ body {
 .rand-play-num {
 	font-size: 18px;
 	margin-right: 20px;
+	text-align: center;
+	min-width: 36px;
 }
 
 .rand-play-num-container {
