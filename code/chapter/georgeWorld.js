@@ -14,6 +14,15 @@ Prospecters:
 		- Player clicks individual blocks until the mine "collapses" or is exhausted.
 		- Instant gratification with no expenditure.
 
+Other Gameplay:
+	- Caravan
+		- Participate in inter-city trade by escorting caravans or creating your own.
+			- Taking ideas from Puzzle Pirates here
+			- As an escort, you participate in a certain amount of battles/minigames on the journey.
+			- Your success helps determine the success of the venture
+		- Relies on the idea that Cities are hubs of trade-- can't buy an item in one city's auction from a second city.
+			- This creates scarcity. 
+
 Design: 
 	- Start with NxN grid of blocks and a certain amount of dynamite.
 	- Click to place dynamite, or click a button that says "Randomly distribute X explosives" (which is modifiable).
@@ -44,6 +53,49 @@ Other Notes
 	- Have a certain number of pets
 	- When the player isn't active, the pets can be set to do work (such as mining or crafting).
 	- They will passively generate materials that can be crafted into other things.
+	- Two types of views:
+		- Experiences
+			- Minigames, traveling through terrain or in a city, etc.
+		- Overlays
+			Things that appear on top of experiences, like inventory.
+
+Things for Sally to Do (i.e., long-term plan)
+	- Animations/designs
+		- LOW priority
+		- make blocks explode
+		- give blocks "shapes" with CSS
+	- Create some sort of inventory
+		- given a player with some array of objects representing items, display all the items in a grid and be able to rearrange, hover/click for details, and equip them.
+		- Inventory should be small
+		- May be difficult to do without 
+	- Create the city/world to move around in
+		- 2D grid of tiles. Player occupies one of those tiles.
+		- City is one map, world is a larger map.
+			- Not really sure about the purpose of the "world" yet, or how exactly it will work. Don't do it yet!
+			- City is high-priority.
+				-Accessible points in the city include
+					* Fountain/free thing
+					* Mines (for prospecting)
+					* Arena
+					* Auction house
+					* Stores and player houses
+						- Both stores and player houses occupy "real estate"-- there can only be so many!
+						- Players can go inside stores (avoiding auction house tax?? To incentivize? Just an idea.)
+						- Players can go inside their own houses.
+						- Players can pay $$ to buy real estate.
+						- If a player owns real estate, he/she can click on it to open up a building menu.
+	- Create minigames
+		- "Fountain" minigame (find better analogy...)
+			- Randomly spawns free items when you visit it
+			- Not really a game, but it's its own view/experience (i.e. not an overlay like inventory).
+		- Battle minigame
+			- Requires database, could be tricky.
+		- Propose one! Make your own!
+	- Create 'store'
+		- Players can have their own personal store which they can fill up from their inventory.
+		- These items are also available at the auction house, but have fixed prices (don't need bidding).
+	- Auction house
+		- Requires database (i.e. multiple users), could be tricky
 */
 
 /*
@@ -77,6 +129,12 @@ var runAnimation = function(frameFunc) {
 		}
 	}
 	requestAnimationFrame(frame);
+};
+
+var Utils = {
+	printCoords: function(x, y) {
+		return '(' + x + ', ' + y + ')';
+	}
 };
 
 var DOM = {
@@ -231,18 +289,45 @@ Prospectors.prototype.mark = function(x, y) {
 };
 
 Prospectors.prototype.unmark = function(x, y) {
-	this.markedActors = this.markedActors.filter(function(a) {
-		return !(a.x === x && a.y === y);
-	});
+	for (var i = 0; i < this.markedActors.length; i++) {
+		if (this.markedActors[i].x === x && this.markedActors[i].y === y) {
+			this.markedActors.splice(i, 1);
+			break;
+		}
+	}
+};
+
+Prospectors.prototype.sortByY = function(a, b) {
+	if (a.y < b.y) {
+		return 1;
+	} else if (a.y === b.y) {
+		return 0;
+	} else {
+		return -1;
+	}
 };
 
 Prospectors.prototype.doPlay = function() {
-	var actors = this.actors;
-	this.markedActors.forEach(function(a) {
-		console.log('here');
-		actors[a.x][a.y].explode();
-	});
-	this.markedActors = [];
+	this.markedActors.sort(this.sortByY);
+	var self = this;
+	var callback = function() {
+		doExplodes()
+	};
+
+	var doExplodes = function() {
+		if (self.markedActors.length) {
+			var a = self.markedActors.pop();
+			self.actors[a.x][a.y].explode(callback);
+		}
+	};
+
+	doExplodes();
+	// var actors = this.actors;
+	// this.markedActors.forEach(function(a) {
+	// 	console.log('here');
+	// 	actors[a.x][a.y].explode();
+	// });
+	//this.markedActors = [];
 };
 
 Prospectors.prototype.doRandPlay = function() {
@@ -264,7 +349,6 @@ Prospectors.prototype.createBackgroundLayer = function() {
 	randomPlay.innerHTML = 'RANDOM PLAY';
 	randomPlay.onclick = function(self) {
 		return function() {
-			console.log('here');
 			self.doRandPlay();
 		};
 	}(this);
@@ -351,7 +435,7 @@ Prospectors.prototype.shift = function(start, end) {
 
 };
 
-Prospectors.prototype.dropBlocksTo = function(x, y) {
+Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 	// Drop every block above this y down a position.
 	// Reduce integrity of base?
 	var start, end;
@@ -361,9 +445,9 @@ Prospectors.prototype.dropBlocksTo = function(x, y) {
 		this.swap(start, end);
 	}
 	// Drop in the block that was destroyed.
-	// The timeouts are causing a display mismatch!
+	// The timeouts are causing a display mismatch??
 	var dropBlock = function (block) {
-		setTimeout(block.fallIn(block), 0);
+		setTimeout(block.fallIn(block, callback), 0);
 	}(this.actors[x][0]);
 };
 
@@ -406,7 +490,7 @@ var Block = function(world, x, y, type) {
 
 	this.mark = function() {
 		this.marked = true;
-		console.log('mark');
+		console.log('mark ' + Utils.printCoords(this.x, this.y));
 		DOM.style(this.blockEl, {
 			backgroundImage: 'url("image/dynamite.png")',
 			boxShadow: 'inset 0 0 0 1px rgba(143,59,27,0.9),inset 0 2px 5px rgba(143,59,27,0.8)'
@@ -414,7 +498,7 @@ var Block = function(world, x, y, type) {
 	};
 
 	this.unmark = function() {
-		console.log('unmark');
+		console.log('unmark ' + Utils.printCoords(this.x, this.y));
 		this.marked = false;
 		DOM.style(this.blockEl, {
 			backgroundImage: 'none',
@@ -444,9 +528,9 @@ var Block = function(world, x, y, type) {
 		});
 	};
 
-	this.explode = function() {
+	this.explode = function(callback) {
 		var drop = this.makeDrop();
-		console.log(drop);
+		console.log("LOOT: " + drop);
 		if (drop) {
 			world.eventQueue.unshift(drop);
 		}
@@ -457,7 +541,7 @@ var Block = function(world, x, y, type) {
 		// Would somehow need to take the arguments and include them in scope.
 		var wrapperFunc = function(x, y) {
 			setTimeout(function() {
-				world.dropBlocksTo(x, y);
+				world.dropBlocksTo(x, y, callback);
 			}, 50);
 		}(this.x, this.y)
 	};
@@ -481,12 +565,13 @@ var Block = function(world, x, y, type) {
 		return 'basic';
 	};
 
-	this.fallIn = function(self) {
+	this.fallIn = function(self, callback) {
 		return function() {
 			self.updateCoords(self.x, -1);
 			self.showBlock();
 			setTimeout(function(){
 				self.updateCoords(self.x, 0);
+				callback();
 			}, 50);
 		};
 	};
@@ -495,7 +580,7 @@ var Block = function(world, x, y, type) {
 		// For now, all possible types have an associated drop chance.
 		// This is too simplistic and needs to be fleshed out, but could work for testing.
 		var possibleTypes = {
-			'basic': 0.1
+			'basic': 0.15
 		};
 
 		var rand = Math.random();
