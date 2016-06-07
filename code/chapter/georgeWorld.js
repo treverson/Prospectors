@@ -230,20 +230,44 @@ Prospectors.prototype.mark = function(x, y) {
 	this.markedActors.push({ x: x, y: y });
 };
 
+Prospectors.prototype.unmark = function(x, y) {
+	this.markedActors = this.markedActors.filter(function(a) {
+		return !(a.x === x && a.y === y);
+	});
+};
+
+Prospectors.prototype.doPlay = function() {
+	var actors = this.actors;
+	this.markedActors.forEach(function(a) {
+		console.log('here');
+		actors[a.x][a.y].explode();
+	});
+	this.markedActors = [];
+};
+
+Prospectors.prototype.doRandPlay = function() {
+
+};
+
 Prospectors.prototype.createBackgroundLayer = function() {
 	// Create menu
 	var menu = DOM.create('div', 'menu');
 	var play = DOM.create('button', 'clickable button norm-play');
 	play.innerHTML = 'PLAY';
-	play.onclick = function() {
-		console.log('play');
-	};
+	play.onclick = function(self) {
+		return function() {
+			self.doPlay();
+		};
+	}(this);
 	var randomPlayWrapper = DOM.create('div', 'rand-play-wrapper');
 	var randomPlay = DOM.create('button', 'clickable button rand-play');
 	randomPlay.innerHTML = 'RANDOM PLAY';
-	randomPlay.onclick = function() {
-		console.log('rand play');
-	};
+	randomPlay.onclick = function(self) {
+		return function() {
+			console.log('here');
+			self.doRandPlay();
+		};
+	}(this);
 
 	// Display randomPlayNum
 	var randomPlayNumEl = DOM.create('div', 'rand-play-num');
@@ -337,6 +361,7 @@ Prospectors.prototype.dropBlocksTo = function(x, y) {
 		this.swap(start, end);
 	}
 	// Drop in the block that was destroyed.
+	// The timeouts are causing a display mismatch!
 	var dropBlock = function (block) {
 		setTimeout(block.fallIn(block), 0);
 	}(this.actors[x][0]);
@@ -397,20 +422,20 @@ var Block = function(world, x, y, type) {
 		});
 	};
 
-	this.act = function() {
-		if (this.type === 'empty') {
-			// Blocks above must fall.
-			DOM.style(this.blockEl, {
-				display: 'none'
-			});
-			world.dropBlocksTo(this.x, this.y);
-		} else if (this.type === 'dynamite') {
-			this.explode();
-			// Explode, then blocks above must fall.
-		} else {
-			// Nothing.
-		}
-	};
+	// this.act = function() {
+	// 	if (this.type === 'empty') {
+	// 		// Blocks above must fall.
+	// 		DOM.style(this.blockEl, {
+	// 			display: 'none'
+	// 		});
+	// 		world.dropBlocksTo(this.x, this.y);
+	// 	} else if (this.type === 'dynamite') {
+	// 		this.explode();
+	// 		// Explode, then blocks above must fall.
+	// 	} else {
+	// 		// Nothing.
+	// 	}
+	// };
 
 	this.updateBlockCoords = function() {
 		DOM.style(this.blockEl, {
@@ -442,6 +467,7 @@ var Block = function(world, x, y, type) {
 			display: 'none'
 		});
 		this.type = 'empty';
+		this.unmark();
 	};
 
 	this.showBlock = function() {
