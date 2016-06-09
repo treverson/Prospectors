@@ -134,6 +134,47 @@ var runAnimation = function(frameFunc) {
 var Utils = {
 	printCoords: function(x, y) {
 		return '(' + x + ', ' + y + ')';
+	},
+	sortByY: function(a, b) {
+		if (a.y < b.y) {
+			return 1;
+		} else if (a.y === b.y) {
+			return 0;
+		} else {
+			return -1;
+		}
+	},
+	pushByY: function(arr, coords) {
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i].y < coords.y) {
+				arr.splice(i, 0, coords);
+				return;
+			}
+		}
+		arr.push(coords);
+	},
+	getValByWeights: function(data, weightProp, valProp) {
+		var rand = Math.random();
+		var multTotal = 0;
+		for (var i in data) {
+			multTotal += data[i][weightProp];
+		}
+		var inverseMultTotal = 1 / multTotal; // Inverse to create ratios with.
+		var runningTotal = 0; // Keep track of previous work.
+		for (var i in data) {
+			runningTotal += data[i][weightProp];
+			if (rand < (runningTotal * inverseMultTotal)) {
+				// Either return the desired value or the name of the winning property.
+				return valProp ? data[i][valProp] : i;
+			}
+		}
+
+		throw "Could not choose a " + weightProp + " in " + data + "!";
+	},
+	join: function(objA, objB) {
+		for (var i in objB) {
+			objA[i] = objB[i];
+		}
 	}
 };
 
@@ -184,6 +225,8 @@ Prospectors.prototype.init = function(display, player) {
 
 	this.player = player;
 
+	this.state = 'ready';
+
 	// The keys we care about. These are examples at the moment.
 	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
 
@@ -192,7 +235,7 @@ Prospectors.prototype.init = function(display, player) {
 	// 'acting'		--> Animation is occurring (actors are acting).
 	this.gameState = 'building';
 	this.eventQueue = [];
-	this.markedActors = [];
+	this.destroyQueue = [];
 
 	// The positions of all the actors
 	this.actors;
@@ -202,7 +245,8 @@ Prospectors.prototype.init = function(display, player) {
 	this.height = 20;
 	this.scale = 30;
 
-	this.randomPlayNum = 5;
+	this.randomSeedNum = 5;
+	this.maxExplosives = Math.floor(this.width * this.height * .15);
 
 	// Initializes our this.actors
 	this.createActors();
@@ -237,36 +281,37 @@ Prospectors.prototype.init = function(display, player) {
 
 Prospectors.prototype.getItem = function() {
 
-	// 'mult' is a the relative chance of getting this item over another.
-	// To pick an item, divide 1 by the sum of all the multipliers. Figure it out...
-	var mkItem = function(name, mult) {
-		return {
-			name: name,
-			mult: mult
-		};
+	// Items will eventually be passed in from outside the game (from the universe).
+	var items = {
+		blastPowder: {
+			mult: 200
+		},
+		coin: {
+			mult: 100
+		},
+		quartz: {
+			mult: 30
+		},
+		metalScraps: {
+			mult: 140
+		}
 	};
 
-	// Items will eventually be passed in from outside the game (from the universe).
-	var items = [
-		mkItem('blast-powder', 200),
-		mkItem('coin', 100),
-		mkItem('quartz', 30),
-		mkItem('metal-scraps', 140)
-	];
+	return Utils.getValByWeights(items, 'mult');
 
-	var rand = Math.random();
-	var multTotal = items.reduce(function(prev, curr) { // Total multiplier
-		return prev + curr.mult;
-	}, 0);
-	var inverseMultTotal = 1 / multTotal; // Inverse to create ratios with.
-	var runningTotal = 0; // Keep track of previous work.
-	for (var i = 0; i < items.length; i++) {
-		runningTotal += items[i].mult;
-		if (rand < (runningTotal * inverseMultTotal)) {
-			return items[i].name;
-		}
-	}
-	return null; // Should not reach this!
+	// var rand = Math.random();
+	// var multTotal = items.reduce(function(prev, curr) { // Total multiplier
+	// 	return prev + curr.mult;
+	// }, 0);
+	// var inverseMultTotal = 1 / multTotal; // Inverse to create ratios with.
+	// var runningTotal = 0; // Keep track of previous work.
+	// for (var i = 0; i < items.length; i++) {
+	// 	runningTotal += items[i].mult;
+	// 	if (rand < (runningTotal * inverseMultTotal)) {
+	// 		return items[i].name;
+	// 	}
+	// }
+	// return null; // Should not reach this!
 };
 
 /*
@@ -284,26 +329,16 @@ Prospectors.prototype.getItem = function() {
 // 	}
 // };
 
-Prospectors.prototype.mark = function(x, y) {
-	this.markedActors.push({ x: x, y: y });
+Prospectors.prototype.prepForDestroy = function(x, y) {
+	this.destroyQueue.push({ x: x, y: y });
 };
 
-Prospectors.prototype.unmark = function(x, y) {
-	for (var i = 0; i < this.markedActors.length; i++) {
-		if (this.markedActors[i].x === x && this.markedActors[i].y === y) {
-			this.markedActors.splice(i, 1);
+Prospectors.prototype.restoreFromDestroy = function(x, y) {
+	for (var i = 0; i < this.destroyQueue.length; i++) {
+		if (this.destroyQueue[i].x === x && this.destroyQueue[i].y === y) {
+			this.destroyQueue.splice(i, 1);
 			break;
 		}
-	}
-};
-
-Prospectors.prototype.sortByY = function(a, b) {
-	if (a.y < b.y) {
-		return 1;
-	} else if (a.y === b.y) {
-		return 0;
-	} else {
-		return -1;
 	}
 };
 
@@ -317,38 +352,63 @@ Prospectors.prototype.weakenNeighbors = function(x, y) {
 	].forEach(function(pair) {
 		nX = x + pair[0];
 		nY = y + pair[1];
-		if (self.actors[nX][nY]) {
+		if (self.actors[nX] && self.actors[nX][nY]) {
 			self.actors[nX][nY].weaken(self.actors[x][y].weight);
 		}
 	});
 };
 
 Prospectors.prototype.doPlay = function() {
-	this.markedActors.sort(this.sortByY);
+	this.state = 'acting';
+	this.destroyQueue.sort(Utils.sortByY);
 	var self = this;
 	var callback = function() {
 		doExplodes()
 	};
 
 	var doExplodes = function() {
-		if (self.markedActors.length) {
-			var a = self.markedActors.pop();
+		if (self.destroyQueue.length) {
+			var a = self.destroyQueue.pop();
 			self.weakenNeighbors(a.x, a.y);
 			self.actors[a.x][a.y].explode(callback);
+		} else {
+			self.state = 'ready';
 		}
 	};
 
 	doExplodes();
 	// var actors = this.actors;
-	// this.markedActors.forEach(function(a) {
+	// this.destroyQueue.forEach(function(a) {
 	// 	console.log('here');
 	// 	actors[a.x][a.y].explode();
 	// });
-	//this.markedActors = [];
+	//this.destroyQueue = [];
 };
 
-Prospectors.prototype.doRandPlay = function() {
+Prospectors.prototype.randomlyMark = function() {
+	var randomBlocks = {},
+		nCoords,
+		k;
 
+	// Add random blocks until we have the correct amount (without going over limit)
+	while (Object.keys(randomBlocks).length < this.randomSeedNum && this.destroyQueue.length < this.maxExplosives) {
+		nCoords = {
+			x: Math.floor(Math.random() * this.width),
+			y: Math.floor(Math.random() * this.height)
+		};
+		k = nCoords.x + '-' + nCoords.y;
+		randomBlocks[k] = nCoords;
+	}
+
+	for (var i in randomBlocks) {
+		this.actors[randomBlocks[i].x][randomBlocks[i].y].mark();
+	}
+};
+
+Prospectors.prototype.doRandSeed = function() {
+	if (this.state === 'ready') {
+		this.randomlyMark();
+	}
 };
 
 Prospectors.prototype.createBackgroundLayer = function() {
@@ -361,38 +421,38 @@ Prospectors.prototype.createBackgroundLayer = function() {
 			self.doPlay();
 		};
 	}(this);
-	var randomPlayWrapper = DOM.create('div', 'rand-play-wrapper');
-	var randomPlay = DOM.create('button', 'clickable button rand-play');
-	randomPlay.innerHTML = 'RANDOM PLAY';
-	randomPlay.onclick = function(self) {
+	var randomSeedWrapper = DOM.create('div', 'rand-play-wrapper');
+	var randomSeed = DOM.create('button', 'clickable button rand-play');
+	randomSeed.innerHTML = 'RANDOM SEED';
+	randomSeed.onclick = function(self) {
 		return function() {
-			self.doRandPlay();
+			self.doRandSeed();
 		};
 	}(this);
 
-	// Display randomPlayNum
-	var randomPlayNumEl = DOM.create('div', 'rand-play-num');
-	randomPlayNumEl.innerHTML = this.randomPlayNum.toString();
+	// Display randomSeedNum
+	var randomSeedNumEl = DOM.create('div', 'rand-play-num');
+	randomSeedNumEl.innerHTML = this.randomSeedNum.toString();
 
-	// Increment randomPlayNum button
+	// Increment randomSeedNum button
 	var upTriangle = DOM.create('a', 'clickable button up-triangle');
 	var upClick = function(self) {
 		return function() {
-			if (self.randomPlayNum < self.player.numExplosives) {
-				self.randomPlayNum += 1;
-				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomPlayNum.toString();
+			if (self.randomSeedNum < self.player.numExplosives && self.randomSeedNum < self.maxExplosives) {
+				self.randomSeedNum += 1;
+				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomSeedNum.toString();
 			}
 		};
 	};
 	upTriangle.onclick = upClick(this);
 
-	// Decrement randomPlayNum button
+	// Decrement randomSeedNum button
 	var downTriangle = DOM.create('a', 'clickable button down-triangle');
 	var downClick = function(self) {
 		return function() {
-			if (self.randomPlayNum > 1) {
-				self.randomPlayNum -= 1;
-				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomPlayNum.toString();
+			if (self.randomSeedNum > 1) {
+				self.randomSeedNum -= 1;
+				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomSeedNum.toString();
 			}
 		};
 	}
@@ -403,15 +463,15 @@ Prospectors.prototype.createBackgroundLayer = function() {
 	triangleContainer.appendChild(upTriangle);
 	triangleContainer.appendChild(downTriangle);
 
-	var randomPlayNumContainer = DOM.create('div', 'rand-play-num-container');
-	randomPlayNumContainer.appendChild(randomPlayNumEl);
-	randomPlayNumContainer.appendChild(triangleContainer);
+	var randomSeedNumContainer = DOM.create('div', 'rand-play-num-container');
+	randomSeedNumContainer.appendChild(randomSeedNumEl);
+	randomSeedNumContainer.appendChild(triangleContainer);
 
-	randomPlayWrapper.appendChild(randomPlay);
-	randomPlayWrapper.appendChild(randomPlayNumContainer);
+	randomSeedWrapper.appendChild(randomSeed);
+	randomSeedWrapper.appendChild(randomSeedNumContainer);
 
 	menu.appendChild(play);
-	menu.appendChild(randomPlayWrapper);
+	menu.appendChild(randomSeedWrapper);
 	DOM.style(menu, {
 		width: (this.scale * this.width) + 'px'
 	});
@@ -469,11 +529,28 @@ Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 };
 
 var BlockConfig = {
-	weights: {
-		basic: 35
+	blocks: {
+		basic: {
+			weight: 25,
+			integrity: 120,
+			dropChance: 0.1,
+			appearanceVal: 100,
+			styles: {
+				backgroundColor: 'rgba(163, 173, 184, 1)'
+			}
+		},
+		granite: {
+			weight: 45,
+			integrity: 250,
+			dropChance: 0.4,
+			appearanceVal: 15,
+			styles: {
+				backgroundColor: 'rgba(78, 97, 114, 1)'
+			}
+		}
 	},
-	integrities: {
-		basic: 100
+	chooseNewType: function() {
+		return Utils.getValByWeights(BlockConfig.blocks, 'appearanceVal');
 	}
 };
 
@@ -481,9 +558,9 @@ var Block = function(world, x, y, type) {
 	this.world = world;
 	this.x = x;
 	this.y = y;
-	this.type = type || 'basic';
-	this.integrity = BlockConfig.integrities[this.type];
-	this.weight = BlockConfig.weights[this.type];
+	this.type = type || BlockConfig.chooseNewType();
+	this.integrity = BlockConfig.blocks[this.type].integrity;
+	this.weight = BlockConfig.blocks[this.type].weight;
 	this.marked = false;
 	this.buildBlockEl = function(self) {
 		var classes = [
@@ -493,20 +570,26 @@ var Block = function(world, x, y, type) {
 			'integrity-' + Math.floor(this.integrity).toString()
 		];
 		var el = DOM.create('div', classes.join(' '));
-		DOM.style(el, {
+		var styles = {
 			width: world.scale + 'px',
 			height: world.scale + 'px',
 			left: this.x * world.scale + 'px',
 			top: this.y * world.scale + 'px'
-			});
+		};
+		Utils.join(styles, BlockConfig.blocks[this.type].styles);
+		DOM.style(el, styles);
 		el.onclick = function() {
-			//self.explode();
 			if (!self.marked) {
-				self.world.mark(self.x, self.y);
-				self.mark();
+				// Don't go over limit!
+				// This if-statement would be better suited to go in Prospectors.
+				// Make self.mark call the append to destroyQ function and then if successful callback to do the rest.
+				if (self.world.destroyQueue.length < self.world.maxExplosives && self.world.state === 'ready') {
+					self.mark();
+				} else {
+					// fail: Should flash the number of explosives in play or something
+				}
 			} else {
 				self.unmark();
-				self.world.unmark(self.x, self.y);
 			}
 		};
 
@@ -518,16 +601,17 @@ var Block = function(world, x, y, type) {
 	this.weaken = function(w) {
 		this.integrity -= w;
 		DOM.style(this.blockEl, {
-			opacity: (this.integrity / BlockConfig.integrities[this.type]).toString()
+			opacity: (this.integrity / BlockConfig.blocks[this.type].integrity).toString()
 		});
 		if (this.integrity <= 0) {
-			// ????
+			this.world.prepForDestroy(this.x, this.y);
 		}
 	};
 
 	this.mark = function() {
+		// console.log('mark ' + Utils.printCoords(this.x, this.y));
 		this.marked = true;
-		console.log('mark ' + Utils.printCoords(this.x, this.y));
+		this.world.prepForDestroy(this.x, this.y);
 		DOM.style(this.blockEl, {
 			backgroundImage: 'url("image/dynamite.png")',
 			boxShadow: 'inset 0 0 0 1px rgba(143,59,27,0.9),inset 0 2px 5px rgba(143,59,27,0.8)'
@@ -535,28 +619,14 @@ var Block = function(world, x, y, type) {
 	};
 
 	this.unmark = function() {
-		console.log('unmark ' + Utils.printCoords(this.x, this.y));
+		// console.log('unmark ' + Utils.printCoords(this.x, this.y));
 		this.marked = false;
+		this.world.restoreFromDestroy(this.x, this.y);
 		DOM.style(this.blockEl, {
 			backgroundImage: 'none',
 			boxShadow: 'inset 0 0 2px 0px #27496d'
 		});
 	};
-
-	// this.act = function() {
-	// 	if (this.type === 'empty') {
-	// 		// Blocks above must fall.
-	// 		DOM.style(this.blockEl, {
-	// 			display: 'none'
-	// 		});
-	// 		world.dropBlocksTo(this.x, this.y);
-	// 	} else if (this.type === 'dynamite') {
-	// 		this.explode();
-	// 		// Explode, then blocks above must fall.
-	// 	} else {
-	// 		// Nothing.
-	// 	}
-	// };
 
 	this.updateBlockCoords = function() {
 		DOM.style(this.blockEl, {
@@ -567,7 +637,7 @@ var Block = function(world, x, y, type) {
 
 	this.explode = function(callback) {
 		var drop = this.makeDrop();
-		console.log("LOOT: " + drop);
+		//console.log("LOOT: " + drop);
 		if (drop) {
 			world.eventQueue.unshift(drop);
 		}
@@ -587,21 +657,19 @@ var Block = function(world, x, y, type) {
 		DOM.style(this.blockEl, {
 			display: 'none'
 		});
+		this.integrity = BlockConfig.blocks[this.type].integrity;
 		this.type = 'empty';
 		this.unmark();
 	};
 
 	this.showBlock = function() {
-		this.type = this.chooseNewType();
-		this.integrity = BlockConfig.integrities[this.type];
-		DOM.style(this.blockEl, {
+		this.type = BlockConfig.chooseNewType();
+		var styles = {
 			display: 'block',
 			opacity: this.integrity.toString()
-		});
-	};
-
-	this.chooseNewType = function() {
-		return 'basic';
+		};
+		Utils.join(styles, BlockConfig.blocks[this.type].styles);
+		DOM.style(this.blockEl, styles);
 	};
 
 	this.fallIn = function(self, callback) {
@@ -616,14 +684,8 @@ var Block = function(world, x, y, type) {
 	};
 
 	this.makeDrop = function() {
-		// For now, all possible types have an associated drop chance.
-		// This is too simplistic and needs to be fleshed out, but could work for testing.
-		var possibleTypes = {
-			'basic': 0.15
-		};
-
 		var rand = Math.random();
-		if (rand < possibleTypes[this.type]) {
+		if (rand < BlockConfig.blocks[this.type].dropChance) {
 			return world.getItem();
 		} else {
 			return false;
@@ -638,7 +700,7 @@ var Block = function(world, x, y, type) {
 };
 
 var Player = function() {
-	this.numExplosives = 20;
+	this.numExplosives = 200;
 	this.loot = [];
 
 	// Show or hide the player's inventory.
