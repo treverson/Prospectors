@@ -123,7 +123,7 @@ var runAnimation = function(frameFunc) {
 			var timeStep = Math.min(time - lastTime, 100) / 1000; 
 			stop = frameFunc(timeStep) === false; // If the frameFunc returns false, stop animation.
 		}
-		lastTime = time;
+			lastTime = time;
 		if (!stop) {
 			requestAnimationFrame(frame);
 		}
@@ -307,6 +307,22 @@ Prospectors.prototype.sortByY = function(a, b) {
 	}
 };
 
+Prospectors.prototype.weakenNeighbors = function(x, y) {
+	var nX, nY;
+	var self = this;
+	[
+		[-1, 0],
+		[1, 0],
+		[0, 1]
+	].forEach(function(pair) {
+		nX = x + pair[0];
+		nY = y + pair[1];
+		if (self.actors[nX][nY]) {
+			self.actors[nX][nY].weaken(self.actors[x][y].weight);
+		}
+	});
+};
+
 Prospectors.prototype.doPlay = function() {
 	this.markedActors.sort(this.sortByY);
 	var self = this;
@@ -317,6 +333,7 @@ Prospectors.prototype.doPlay = function() {
 	var doExplodes = function() {
 		if (self.markedActors.length) {
 			var a = self.markedActors.pop();
+			self.weakenNeighbors(a.x, a.y);
 			self.actors[a.x][a.y].explode(callback);
 		}
 	};
@@ -451,12 +468,22 @@ Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 	}(this.actors[x][0]);
 };
 
+var BlockConfig = {
+	weights: {
+		basic: 35
+	},
+	integrities: {
+		basic: 100
+	}
+};
+
 var Block = function(world, x, y, type) {
 	this.world = world;
 	this.x = x;
 	this.y = y;
 	this.type = type || 'basic';
-	this.integrity = 100;
+	this.integrity = BlockConfig.integrities[this.type];
+	this.weight = BlockConfig.weights[this.type];
 	this.marked = false;
 	this.buildBlockEl = function(self) {
 		var classes = [
@@ -487,6 +514,16 @@ var Block = function(world, x, y, type) {
 	};
 
 	this.blockEl = this.buildBlockEl(this);
+
+	this.weaken = function(w) {
+		this.integrity -= w;
+		DOM.style(this.blockEl, {
+			opacity: (this.integrity / BlockConfig.integrities[this.type]).toString()
+		});
+		if (this.integrity <= 0) {
+			// ????
+		}
+	};
 
 	this.mark = function() {
 		this.marked = true;
@@ -543,7 +580,7 @@ var Block = function(world, x, y, type) {
 			setTimeout(function() {
 				world.dropBlocksTo(x, y, callback);
 			}, 50);
-		}(this.x, this.y)
+		}(this.x, this.y);
 	};
 
 	this.hideBlock = function() {
@@ -556,8 +593,10 @@ var Block = function(world, x, y, type) {
 
 	this.showBlock = function() {
 		this.type = this.chooseNewType();
+		this.integrity = BlockConfig.integrities[this.type];
 		DOM.style(this.blockEl, {
-			display: 'block'
+			display: 'block',
+			opacity: this.integrity.toString()
 		});
 	};
 
