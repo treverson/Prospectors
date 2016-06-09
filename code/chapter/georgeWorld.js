@@ -175,6 +175,9 @@ var Utils = {
 		for (var i in objB) {
 			objA[i] = objB[i];
 		}
+	},
+	rand: function(min, max) {
+		return Math.floor(Math.random() * (max - min + 1)) + min;	
 	}
 };
 
@@ -329,16 +332,24 @@ Prospectors.prototype.getItem = function() {
 // 	}
 // };
 
-Prospectors.prototype.prepForDestroy = function(x, y) {
-	this.destroyQueue.push({ x: x, y: y });
+Prospectors.prototype.prepForDestroy = function(x, y, callback) {
+	if (this.destroyQueue.length < this.maxExplosives) {
+		this.destroyQueue.push({ x: x, y: y });
+		if (callback) {
+			callback();
+		}
+	}
 };
 
-Prospectors.prototype.restoreFromDestroy = function(x, y) {
+Prospectors.prototype.restoreFromDestroy = function(x, y, callback) {
 	for (var i = 0; i < this.destroyQueue.length; i++) {
 		if (this.destroyQueue[i].x === x && this.destroyQueue[i].y === y) {
 			this.destroyQueue.splice(i, 1);
 			break;
 		}
+	}
+	if (callback) {
+		callback();
 	}
 };
 
@@ -531,7 +542,7 @@ Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 var BlockConfig = {
 	blocks: {
 		basic: {
-			weight: 25,
+			weight: 30,
 			integrity: 120,
 			dropChance: 0.1,
 			appearanceVal: 100,
@@ -540,7 +551,7 @@ var BlockConfig = {
 			}
 		},
 		granite: {
-			weight: 45,
+			weight: 50,
 			integrity: 250,
 			dropChance: 0.4,
 			appearanceVal: 15,
@@ -562,7 +573,7 @@ var Block = function(world, x, y, type) {
 	this.integrity = BlockConfig.blocks[this.type].integrity;
 	this.weight = BlockConfig.blocks[this.type].weight;
 	this.marked = false;
-	this.buildBlockEl = function(self) {
+	this.buildBlockEl = function() {
 		var classes = [
 			'block',
 			'clickable',
@@ -579,24 +590,19 @@ var Block = function(world, x, y, type) {
 		Utils.join(styles, BlockConfig.blocks[this.type].styles);
 		DOM.style(el, styles);
 		el.onclick = function() {
-			if (!self.marked) {
-				// Don't go over limit!
-				// This if-statement would be better suited to go in Prospectors.
-				// Make self.mark call the append to destroyQ function and then if successful callback to do the rest.
-				if (self.world.destroyQueue.length < self.world.maxExplosives && self.world.state === 'ready') {
-					self.mark();
+			if (this.world.state === 'ready') {
+				if (!this.marked) {
+					this.mark();
 				} else {
-					// fail: Should flash the number of explosives in play or something
+					this.unmark();
 				}
-			} else {
-				self.unmark();
 			}
-		};
+		}.bind(this);
 
 		return el;
 	};
 
-	this.blockEl = this.buildBlockEl(this);
+	this.blockEl = this.buildBlockEl();
 
 	this.weaken = function(w) {
 		this.integrity -= w;
@@ -610,22 +616,24 @@ var Block = function(world, x, y, type) {
 
 	this.mark = function() {
 		// console.log('mark ' + Utils.printCoords(this.x, this.y));
-		this.marked = true;
-		this.world.prepForDestroy(this.x, this.y);
-		DOM.style(this.blockEl, {
-			backgroundImage: 'url("image/dynamite.png")',
-			boxShadow: 'inset 0 0 0 1px rgba(143,59,27,0.9),inset 0 2px 5px rgba(143,59,27,0.8)'
-		});
+		this.world.prepForDestroy(this.x, this.y, function() {
+			this.marked = true;
+			DOM.style(this.blockEl, {
+				backgroundImage: 'url("image/dynamite.png")',
+				boxShadow: 'inset 0 0 0 1px rgba(143,59,27,0.9),inset 0 2px 5px rgba(143,59,27,0.8)'
+			});
+		}.bind(this));
 	};
 
 	this.unmark = function() {
 		// console.log('unmark ' + Utils.printCoords(this.x, this.y));
-		this.marked = false;
-		this.world.restoreFromDestroy(this.x, this.y);
-		DOM.style(this.blockEl, {
-			backgroundImage: 'none',
-			boxShadow: 'inset 0 0 2px 0px #27496d'
-		});
+		this.world.restoreFromDestroy(this.x, this.y, function() {
+			this.marked = false;
+			DOM.style(this.blockEl, {
+				backgroundImage: 'none',
+				boxShadow: 'inset 0 0 2px 0px #27496d'
+			});
+		}.bind(this));
 	};
 
 	this.updateBlockCoords = function() {
@@ -639,7 +647,8 @@ var Block = function(world, x, y, type) {
 		var drop = this.makeDrop();
 		//console.log("LOOT: " + drop);
 		if (drop) {
-			world.eventQueue.unshift(drop);
+			// world.eventQueue.unshift(drop);
+			this.world.player.addLoot(drop);
 		}
 		this.hideBlock();
 		
@@ -701,11 +710,19 @@ var Block = function(world, x, y, type) {
 
 var Player = function() {
 	this.numExplosives = 200;
-	this.loot = [];
+	this.loot = {};
 
 	// Show or hide the player's inventory.
 	this.toggleInventory = function() {
 		// Implement
+	};
+
+	this.addLoot = function(item) {
+		if (this.loot[item]) {
+			this.loot[item] += 1;
+		} else {
+			this.loot[item] = 1;
+		}
 	};
 };
 
