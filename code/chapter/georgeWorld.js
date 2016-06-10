@@ -131,6 +131,24 @@ var runAnimation = function(frameFunc) {
 	requestAnimationFrame(frame);
 };
 
+var Items = {
+	// Items will eventually be passed in from outside the game (from the universe).
+	items: {
+		blastPowder: {
+			mult: 200
+		},
+		coin: {
+			mult: 100
+		},
+		quartz: {
+			mult: 30
+		},
+		metalScraps: {
+			mult: 140
+		}
+	}
+};
+
 var Utils = {
 	printCoords: function(x, y) {
 		return '(' + x + ', ' + y + ')';
@@ -282,25 +300,15 @@ Prospectors.prototype.init = function(display, player) {
 	// });
 };
 
+Prospectors.prototype.animateDrop = function(x, y, item) {
+	this.display.animateDrop((x * this.scale), (y * this.scale), item, 0, 0);
+
+
+};
+
 Prospectors.prototype.getItem = function() {
 
-	// Items will eventually be passed in from outside the game (from the universe).
-	var items = {
-		blastPowder: {
-			mult: 200
-		},
-		coin: {
-			mult: 100
-		},
-		quartz: {
-			mult: 30
-		},
-		metalScraps: {
-			mult: 140
-		}
-	};
-
-	return Utils.getValByWeights(items, 'mult');
+	return Utils.getValByWeights(Items.items, 'mult');
 
 	// var rand = Math.random();
 	// var multTotal = items.reduce(function(prev, curr) { // Total multiplier
@@ -542,7 +550,7 @@ Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 var BlockConfig = {
 	blocks: {
 		basic: {
-			weight: 30,
+			weight: 35,
 			integrity: 120,
 			dropChance: 0.1,
 			appearanceVal: 100,
@@ -551,7 +559,7 @@ var BlockConfig = {
 			}
 		},
 		granite: {
-			weight: 50,
+			weight: 60,
 			integrity: 250,
 			dropChance: 0.4,
 			appearanceVal: 15,
@@ -648,6 +656,7 @@ var Block = function(world, x, y, type) {
 		//console.log("LOOT: " + drop);
 		if (drop) {
 			// world.eventQueue.unshift(drop);
+			world.animateDrop(this.x, this.y, drop);
 			this.world.player.addLoot(drop);
 		}
 		this.hideBlock();
@@ -708,14 +717,24 @@ var Block = function(world, x, y, type) {
 	};
 };
 
-var Player = function() {
+var Player = function(rootEl) {
 	this.numExplosives = 200;
 	this.loot = {};
+
+	this.init = function() {
+		this.createOverlay();
+	};
 
 	// Show or hide the player's inventory.
 	this.toggleInventory = function() {
 		// Implement
 	};
+
+	// Create inventory overlay.
+	this.createOverlay = function() {
+		this.overlay = DOM.create('div', 'inventory-overlay');
+		rootEl.appendChild(this.overlay);
+	}
 
 	this.addLoot = function(item) {
 		if (this.loot[item]) {
@@ -724,8 +743,16 @@ var Player = function() {
 			this.loot[item] = 1;
 		}
 	};
+
+	this.init();
 };
 
+
+/*
+Try to generalize this function so that we can 
+have multiple displays with different behavior
+(e.g. a Player display and a Game display).
+*/
 var Display = function(parent, world) {
 
 	this.wrap;
@@ -765,6 +792,17 @@ var Display = function(parent, world) {
 		this.game.appendChild(this.actorLayer);
 	};
 
+	// Destination is dX, dY. This is found from the location of the spot in inventory.
+	// TODO: Create a stylesheet for the items! Calculate values based on the Prospectors.scale
+	this.animateDrop = function(x, y, item, dX, dY) {
+		var itemEl = DOM.create('div', 'item ' + item);
+		DOM.style(itemEl, {
+			left: x + 'px',
+			top: y + 'px'
+		});
+		this.actorLayer.appendChild(itemEl);
+	}
+
 	this.removeActors = function() {
 		// Remove actors
 		// I'm thinking Display should take a World because then the Display can operate on a generic World.
@@ -773,6 +811,6 @@ var Display = function(parent, world) {
 
 var main = function(world) {
 	var display = new Display(document.body, world);
-	var player = new Player();
+	var player = new Player(document.body);
 	world.init(display, player);
 };
