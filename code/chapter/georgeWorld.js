@@ -59,7 +59,7 @@ Other Notes
 		- Overlays
 			Things that appear on top of experiences, like inventory.
 
-Things for Sally to Do (i.e., long-term plan)
+Things for Sally to Do (slash long-term plans)
 	- Animations/designs
 		- LOW priority
 		- make blocks explode
@@ -96,6 +96,22 @@ Things for Sally to Do (i.e., long-term plan)
 		- These items are also available at the auction house, but have fixed prices (don't need bidding).
 	- Auction house
 		- Requires database (i.e. multiple users), could be tricky
+
+Learning materials & general setup:
+	- Install
+		* Node/npm
+		* Git
+			* Be able to use git bash
+			* Understand basic git commands/concepts
+				* push/pull/add/commit/branch/merge/clone/remote
+	- https://github.com/airbnb/javascript/tree/master/es5
+	- Eloquent Javascript
+		* 1: "Values, Types, and Operators" ("Unary Operators" and down).
+		* 3: "Functions"
+		* 5: "Higher-Order Functions"
+		* 6: "The Secret Life of Objects"
+		* 13 "The Document Object Model"
+		* Everything else is as-needed.
 */
 
 /*
@@ -262,8 +278,8 @@ Prospectors.prototype.init = function(display, player) {
 	this.actors;
 
 	// Game size variables.
-	this.width = 20;
-	this.height = 20;
+	this.width = 15;
+	this.height = 15;
 	this.scale = 30;
 
 	this.randomSeedNum = 5;
@@ -306,8 +322,6 @@ Prospectors.prototype.init = function(display, player) {
 
 Prospectors.prototype.animateDrop = function(x, y, item) {
 	this.display.animateDrop((x * this.scale), (y * this.scale), item, 0, 0);
-
-
 };
 
 Prospectors.prototype.getItem = function() {
@@ -736,7 +750,7 @@ var Player = function(rootEl) {
 
 	// Create inventory overlay.
 	this.createOverlay = function() {
-		this.overlay = DOM.create('div', 'inventory-overlay');
+		this.overlay = DOM.create('div', 'inventory-overlay clickable');
 		rootEl.appendChild(this.overlay);
 	}
 
@@ -751,6 +765,46 @@ var Player = function(rootEl) {
 	this.init();
 };
 
+
+var Item = function() {
+	var itemWidth = 0.8;
+
+	this.init = function(x, y, name, scale) {
+		this.x = x;
+		this.y = y;
+		this.name = name;
+		this.itemEl = DOM.create('div', 'item');
+		this.scale = scale;
+		
+		DOM.style(this.itemEl, {
+			backgroundImage: 'url("image/' + this.name + '.png")',
+			left: this.x + 'px',
+			top: this.y + 'px',
+			margin: (scale - (scale * itemWidth))/2 + 'px',
+			width: (scale * itemWidth) + 'px',
+			height: (scale * itemWidth) + 'px'
+		});
+	};
+
+	this.sendToDestination = function(dx, dy) {
+		var callback = function() {
+			DOM.style(this.itemEl, {
+				display: 'none'
+			});
+		};
+
+		setTimeout(function() {
+			var amt = (this.scale * 1.5);
+			DOM.style(this.itemEl, {
+				top: (this.y - amt/4) + 'px',
+				left: (this.x - amt/4) + 'px',
+				width:  amt + 'px',
+				height: amt + 'px'
+			});
+			setTimeout(callback.bind(this), 500);
+		}.bind(this), 100);
+	};
+}
 
 /*
 Try to generalize this function so that we can 
@@ -799,12 +853,10 @@ var Display = function(parent, world) {
 	// Destination is dX, dY. This is found from the location of the spot in inventory.
 	// TODO: Create a stylesheet for the items! Calculate values based on the Prospectors.scale
 	this.animateDrop = function(x, y, item, dX, dY) {
-		var itemEl = DOM.create('div', 'item ' + item);
-		DOM.style(itemEl, {
-			left: x + 'px',
-			top: y + 'px'
-		});
-		this.actorLayer.appendChild(itemEl);
+		var newItem = new Item();
+		newItem.init(x, y, item, world.scale);
+		this.actorLayer.appendChild(newItem.itemEl);
+		newItem.sendToDestination(0,0);
 	}
 
 	this.removeActors = function() {
