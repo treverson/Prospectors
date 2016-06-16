@@ -275,6 +275,10 @@ Prospectors.prototype.init = function(display, player) {
 	// Initialize display.
 	this.display.init();
 
+	// var style = document.createElement("style");
+	// document.head.appendChild(style);
+		
+
 	// Draw initial frame
 	this.display.drawBackground(this.createBackgroundLayer());
 	this.display.drawActors(this.actors);

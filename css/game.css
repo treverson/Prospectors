@@ -23,6 +23,7 @@ body {
 	position: absolute;
 }
 
+/*
 .item.blastPowder {
     background: red;
     width: 20px;
@@ -103,7 +104,7 @@ body {
     overflow: hidden;
 
 }
-
+*/
 .background td {
 	padding: 0;
 }
