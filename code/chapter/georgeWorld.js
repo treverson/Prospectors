@@ -42,6 +42,8 @@ Implementation notes:
 		- Initial actor state
 		- Event listeners
 	- Step takes current time and user input and adjust actors accordingly.
+	- DON'T WORRY ABOUT PERFECTION
+		* The goal is to create a working model, not a final product!
 
 Library
 	- One goal of this project is to create a platform, or library, to which worlds can be attached.
