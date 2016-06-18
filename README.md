@@ -1,5 +1,5 @@
 Notes:
-Sally was here
+Sally was here!!
 The idea of this game is to create an oldschool Neopets-inspired world in which the user interface is primarily an animated JS game.
 
 Players have "pets" that they feed, clothe, house, and battle against each other.
