@@ -112,93 +112,93 @@ Okay, that should be good.
 
 
 ### Things for Sally to Do (slash long-term plans)
-	- Animations/designs
-		- LOW priority
-		- make blocks explode
-		- give blocks "shapes" with CSS
-	- Create some sort of inventory
-		- given a player with some array of objects representing items, display all the items in a grid and be able to rearrange, hover/click for details, and equip them.
-		- Inventory should be small
-		- May be difficult to do
-	- Create the city/world to move around in
-		- 2D grid of tiles. Player occupies one of those tiles.
-		- City is one map, world is a larger map.
-			- Not really sure about the purpose of the "world" yet, or how exactly it will work. Don't do it yet!
-			- City is high-priority.
-				-Accessible points in the city include
-					* Fountain/free thing
-					* Mines (for prospecting)
-					* Arena
-					* Auction house
-					* Stores and player houses
-						- Both stores and player houses occupy "real estate"-- there can only be so many!
-						- Players can go inside stores (avoiding auction house tax?? To incentivize? Just an idea.)
-						- Players can go inside their own houses.
-						- Players can pay $$ to buy real estate.
-						- If a player owns real estate, he/she can click on it to open up a building menu.
-	- Create minigames
-		- "Fountain" minigame (find better analogy...)
-			- Randomly spawns free items when you visit it
-			- Not really a game, but it's its own view/experience (i.e. not an overlay like inventory).
-		- Battle minigame
-			- Requires database, could be tricky.
-		- Propose one! Make your own!
-	- Create 'store'
-		- Players can have their own personal store which they can fill up from their inventory.
-		- These items are also available at the auction house, but have fixed prices (don't need bidding).
-	- Auction house
-		- Requires database (i.e. multiple users), could be tricky
+- Animations/designs
+	- LOW priority
+	- make blocks explode
+	- give blocks "shapes" with CSS
+- Create some sort of inventory
+	- given a player with some array of objects representing items, display all the items in a grid and be able to rearrange, hover/click for details, and equip them.
+	- Inventory should be small
+	- May be difficult to do
+- Create the city/world to move around in
+	- 2D grid of tiles. Player occupies one of those tiles.
+	- City is one map, world is a larger map.
+		- Not really sure about the purpose of the "world" yet, or how exactly it will work. Don't do it yet!
+		- City is high-priority.
+			-Accessible points in the city include
+				* Fountain/free thing
+				* Mines (for prospecting)
+				* Arena
+				* Auction house
+				* Stores and player houses
+					- Both stores and player houses occupy "real estate"-- there can only be so many!
+					- Players can go inside stores (avoiding auction house tax?? To incentivize? Just an idea.)
+					- Players can go inside their own houses.
+					- Players can pay $$ to buy real estate.
+					- If a player owns real estate, he/she can click on it to open up a building menu.
+- Create minigames
+	- "Fountain" minigame (find better analogy...)
+		- Randomly spawns free items when you visit it
+		- Not really a game, but it's its own view/experience (i.e. not an overlay like inventory).
+	- Battle minigame
+		- Requires database, could be tricky.
+	- Propose one! Make your own!
+- Create 'store'
+	- Players can have their own personal store which they can fill up from their inventory.
+	- These items are also available at the auction house, but have fixed prices (don't need bidding).
+- Auction house
+	- Requires database (i.e. multiple users), could be tricky
 
 ### Learning materials & general setup:
-	- Install
-		* Node/npm
-		* Git
-			* Be able to use git bash
-			* Understand basic git commands/concepts
-				* push/pull/add/commit/branch/merge/clone/remote
-	- https://github.com/airbnb/javascript/tree/master/es5
-	- Eloquent Javascript
-		* 1: "Values, Types, and Operators" ("Unary Operators" and down).
-		* 3: "Functions"
-		* 5: "Higher-Order Functions"
-		* 6: "The Secret Life of Objects"
-		* 13 "The Document Object Model"
-		* Everything else is as-needed.
+- Install
+	* Node/npm
+	* Git
+		* Be able to use git bash
+		* Understand basic git commands/concepts
+			* push/pull/add/commit/branch/merge/clone/remote
+- https://github.com/airbnb/javascript/tree/master/es5
+- Eloquent Javascript
+	* 1: "Values, Types, and Operators" ("Unary Operators" and down).
+	* 3: "Functions"
+	* 5: "Higher-Order Functions"
+	* 6: "The Secret Life of Objects"
+	* 13 "The Document Object Model"
+	* Everything else is as-needed.
 
 ### Other Gameplay:
-	- Cities
-		- Cities are hubs of activity and centers of trade.
-			- Items for sale in one city cannot be purchased from another.
-			- City dwellers receive benefits from trade?
-		- Players can receive loot once a day from the town geyser (all towns form around geysers).
-			- The story is that these geysers eject valuable treasures from the center of the planet.
-		- By exploring, players can come across the ruins of old cities
-			- New cities are formed in the ruins of old ones.
-			- Players can attempt to settle there, but they do not become active cities until a certain population is reached. 
-				- So why would people go there?
-					- Early settlement
-					- Proximity to resources?
-					- Other...
-	- Caravan
-		- Participate in inter-city trade by escorting caravans or creating your own.
-			- Taking ideas from Puzzle Pirates here
-			- As an escort, you participate in a certain amount of battles/minigames on the journey.
-			- Your success helps determine the success of the venture
-		- Relies on the idea that Cities are hubs of trade-- can't buy an item in one city's auction from a second city.
-			- This creates scarcity.
+- Cities
+	- Cities are hubs of activity and centers of trade.
+		- Items for sale in one city cannot be purchased from another.
+		- City dwellers receive benefits from trade?
+	- Players can receive loot once a day from the town geyser (all towns form around geysers).
+		- The story is that these geysers eject valuable treasures from the center of the planet.
+	- By exploring, players can come across the ruins of old cities
+		- New cities are formed in the ruins of old ones.
+		- Players can attempt to settle there, but they do not become active cities until a certain population is reached. 
+			- So why would people go there?
+				- Early settlement
+				- Proximity to resources?
+				- Other...
+- Caravan
+	- Participate in inter-city trade by escorting caravans or creating your own.
+		- Taking ideas from Puzzle Pirates here
+		- As an escort, you participate in a certain amount of battles/minigames on the journey.
+		- Your success helps determine the success of the venture
+	- Relies on the idea that Cities are hubs of trade-- can't buy an item in one city's auction from a second city.
+		- This creates scarcity.
 
 ### Library
-	- One goal of this project is to create a platform, or library, to which worlds can be attached.
-	- That is, we want to create a base framework and then be able to send arbitrary worlds to it to be run and displayed on the screen.
-	- How to accomplish this?
-	- First step is creating an example world or two and being able to run them. Then the common elements can be factored out.
+- One goal of this project is to create a platform, or library, to which worlds can be attached.
+- That is, we want to create a base framework and then be able to send arbitrary worlds to it to be run and displayed on the screen.
+- How to accomplish this?
+- First step is creating an example world or two and being able to run them. Then the common elements can be factored out.
 
 ### Other Notes
-	- Have a certain number of pets
-	- When the player isn't active, the pets can be set to do work (such as mining or crafting).
-	- They will passively generate materials that can be crafted into other things.
-	- Two types of views:
-		- Experiences
-			- Minigames, traveling through terrain or in a city, etc.
-		- Overlays
-			Things that appear on top of experiences, like inventory.
+- Have a certain number of pets
+- When the player isn't active, the pets can be set to do work (such as mining or crafting).
+- They will passively generate materials that can be crafted into other things.
+- Two types of views:
+	- Experiences
+		- Minigames, traveling through terrain or in a city, etc.
+	- Overlays
+		Things that appear on top of experiences, like inventory.
