@@ -1,3 +1,4 @@
+# Prospectors Readme
 ## Notes:
 
 The idea of this game is to create an oldschool "Neopets meets Puzzle Pirates"-inspired world in which the user interface is primarily an animated JS game.
