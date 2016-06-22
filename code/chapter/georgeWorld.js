@@ -156,57 +156,37 @@ var DOM = {
 	}
 };
 
-/*
-	World interface
-	- defines methods we need to create when adding a new world.
-*/
-var World = function() {
-	// Idea: create an array of functions that need to be created?
-
-	// Return initial DOM element to attach OR -- Do stepping...?
-	this.init = function(display) { /* Requires implementation */ };
-	// A step in the function with time = t
-	this.step = function(time, input) { /* Requires implementation */ };
-	// The background layer to draw once
-	this.createBackgroundLayer = function() { /* Requires implementation */ };
-	// The actors to draw each iteration
-	this.createActors = function() { /* Requires implementation */ };
-	this.actors = [];
-	this.display;
-	this.keyCodes;
-	this.keys;
-};
-
 // This is a bad way to do things I think.
 var Prospectors = function() {};
 Prospectors.prototype.init = function(display, player) {
-	this.prototype = Object.create(World);
 
 	// Send elements to Display to draw.
 	this.display = display;
 
 	this.player = player;
 
+	// The state of the game. Options include:
+	// 'ready'		--> Player may place dynamite on the map.
+	// 'acting'		--> Animation is occurring (actors are acting).
 	this.state = 'ready';
 
 	// The keys we care about. These are examples at the moment.
 	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
 
-	// The state of the game. Options include:
-	// 'building'	--> Player is placing dynamite on the map.
-	// 'acting'		--> Animation is occurring (actors are acting).
-	this.gameState = 'building';
-	this.eventQueue = [];
+	// Things to be destroyed in order.
 	this.destroyQueue = [];
 
 	// The positions of all the actors
 	this.actors;
 
 	// Game size variables.
+	// width & height refer to number of blocks
 	this.width = 15;
 	this.height = 15;
+	// scale refers to size of block in pixels.
 	this.scale = 30;
 
+	// Variables for randomly placing explosives
 	this.randomSeedNum = 5;
 	this.maxExplosives = Math.floor(this.width * this.height * .15);
 
@@ -216,33 +196,9 @@ Prospectors.prototype.init = function(display, player) {
 	// Initialize display.
 	this.display.init();
 
-	// var style = document.createElement("style");
-	// document.head.appendChild(style);
-		
-
 	// Draw initial frame
 	this.display.drawBackground(this.createBackgroundLayer());
 	this.display.drawActors(this.actors);
-
-	// Not sure what this number means exactly but we need it.
-	this.stepDuration = 0.1;
-
-	// Variable to decide how often we listen to the input, will be used in this.step.
-	// this.minStep = 100;
-
-	// What keys were last pressed?
-	this.keys = createEventListeners(this.keyCodes); // This is a higher-level variable --> We want access to it outside the World (later).
-
-	var lastTime = Date.now();
-
-	// // Reference to this.
-	// var self = this;
-
-	// // Begin animation
-	// runAnimation(function(step) {
-	// 	self.step(step);
-	// 	self.display.drawFrame();
-	// });
 };
 
 Prospectors.prototype.animateDrop = function(x, y, item) {
@@ -250,38 +206,8 @@ Prospectors.prototype.animateDrop = function(x, y, item) {
 };
 
 Prospectors.prototype.getItem = function() {
-
 	return Utils.getValByWeights(Items.items, 'mult');
-
-	// var rand = Math.random();
-	// var multTotal = items.reduce(function(prev, curr) { // Total multiplier
-	// 	return prev + curr.mult;
-	// }, 0);
-	// var inverseMultTotal = 1 / multTotal; // Inverse to create ratios with.
-	// var runningTotal = 0; // Keep track of previous work.
-	// for (var i = 0; i < items.length; i++) {
-	// 	runningTotal += items[i].mult;
-	// 	if (rand < (runningTotal * inverseMultTotal)) {
-	// 		return items[i].name;
-	// 	}
-	// }
-	// return null; // Should not reach this!
 };
-
-/*
-	step
-	- Don't really need this right now.
-*/
-// Prospectors.prototype.step = function(step) {
-// 	while (step > 0) {
-// 		for (var i = 0; i < this.width; i++ ) {
-// 			for (var j = 0; j < this.height; j++) {
-// 				this.actors[i][j].act();
-// 			}
-// 		}
-// 		step -= this.stepDuration;
-// 	}
-// };
 
 Prospectors.prototype.prepForDestroy = function(x, y, callback) {
 	if (this.destroyQueue.length < this.maxExplosives) {
@@ -306,7 +232,7 @@ Prospectors.prototype.restoreFromDestroy = function(x, y, callback) {
 
 Prospectors.prototype.weakenNeighbors = function(x, y) {
 	var nX, nY;
-	var self = this;
+	// Iterate through neighboring blocks and weaken them.
 	[
 		[-1, 0],
 		[1, 0],
@@ -314,37 +240,30 @@ Prospectors.prototype.weakenNeighbors = function(x, y) {
 	].forEach(function(pair) {
 		nX = x + pair[0];
 		nY = y + pair[1];
-		if (self.actors[nX] && self.actors[nX][nY]) {
-			self.actors[nX][nY].weaken(self.actors[x][y].weight);
+		if (this.actors[nX] && this.actors[nX][nY]) {
+			this.actors[nX][nY].weaken(this.actors[x][y].weight);
 		}
-	});
+	}.bind(this));
 };
 
 Prospectors.prototype.doPlay = function() {
 	this.state = 'acting';
-	this.destroyQueue.sort(Utils.sortByY);
-	var self = this;
+	this.destroyQueue.sort(Utils.sortByY); // Is this the best way?
 	var callback = function() {
 		doExplodes()
 	};
 
 	var doExplodes = function() {
-		if (self.destroyQueue.length) {
-			var a = self.destroyQueue.pop();
-			self.weakenNeighbors(a.x, a.y);
-			self.actors[a.x][a.y].explode(callback);
+		if (this.destroyQueue.length) {
+			var a = this.destroyQueue.pop();
+			this.weakenNeighbors(a.x, a.y);
+			this.actors[a.x][a.y].explode(callback);
 		} else {
-			self.state = 'ready';
+			this.state = 'ready';
 		}
-	};
+	}.bind(this);
 
 	doExplodes();
-	// var actors = this.actors;
-	// this.destroyQueue.forEach(function(a) {
-	// 	console.log('here');
-	// 	actors[a.x][a.y].explode();
-	// });
-	//this.destroyQueue = [];
 };
 
 Prospectors.prototype.randomlyMark = function() {
@@ -376,21 +295,22 @@ Prospectors.prototype.doRandSeed = function() {
 Prospectors.prototype.createBackgroundLayer = function() {
 	// Create menu
 	var menu = DOM.create('div', 'menu');
+	// Create play button
 	var play = DOM.create('button', 'clickable button norm-play');
 	play.innerHTML = 'PLAY';
-	play.onclick = function(self) {
-		return function() {
-			self.doPlay();
-		};
-	}(this);
+	// Play onclick function (bind this)
+	play.onclick = function() {
+		this.doPlay();
+	}.bind(this);
+
+	// Create "random seed" button
 	var randomSeedWrapper = DOM.create('div', 'rand-play-wrapper');
 	var randomSeed = DOM.create('button', 'clickable button rand-play');
 	randomSeed.innerHTML = 'RANDOM SEED';
-	randomSeed.onclick = function(self) {
-		return function() {
-			self.doRandSeed();
-		};
-	}(this);
+	// randomSeed onclick function (bind this)
+	randomSeed.onclick = function() {
+		this.doRandSeed();
+	}.bind(this);
 
 	// Display randomSeedNum
 	var randomSeedNumEl = DOM.create('div', 'rand-play-num');
@@ -398,27 +318,21 @@ Prospectors.prototype.createBackgroundLayer = function() {
 
 	// Increment randomSeedNum button
 	var upTriangle = DOM.create('a', 'clickable button up-triangle');
-	var upClick = function(self) {
-		return function() {
-			if (self.randomSeedNum < self.player.numExplosives && self.randomSeedNum < self.maxExplosives) {
-				self.randomSeedNum += 1;
-				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomSeedNum.toString();
-			}
-		};
-	};
-	upTriangle.onclick = upClick(this);
+	upTriangle.onclick = function() {
+		if (this.randomSeedNum < this.player.numExplosives && this.randomSeedNum < this.maxExplosives) {
+			this.randomSeedNum += 1;
+			document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+		}
+	}.bind(this);
 
 	// Decrement randomSeedNum button
 	var downTriangle = DOM.create('a', 'clickable button down-triangle');
-	var downClick = function(self) {
-		return function() {
-			if (self.randomSeedNum > 1) {
-				self.randomSeedNum -= 1;
-				document.getElementsByClassName('rand-play-num')[0].innerHTML = self.randomSeedNum.toString();
-			}
-		};
-	}
-	downTriangle.onclick = downClick(this);
+	downTriangle.onclick = function() {
+		if (this.randomSeedNum > 1) {
+			this.randomSeedNum -= 1;
+			document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+		}
+	}.bind(this);
 
 	// Container for increment/decrement buttons
 	var triangleContainer = DOM.create('div', 'triangle-container');
@@ -451,32 +365,23 @@ Prospectors.prototype.createActors = function() {
 	}
 };
 
-/*
-Shift instead of swap.
-Randomly generate an event from the removed block and add it to the event queue!
-Then delete the block, shift the rest down, and fill in a new block.
-*/
 Prospectors.prototype.swap = function(start, end) {
-
 	this.actors[start.x][start.y].updateCoords(end.x, end.y);
 	this.actors[end.x][end.y].updateCoords(start.x, start.y);
 
 	var t = this.actors[start.x][start.y];
 	this.actors[start.x][start.y] = this.actors[end.x][end.y];
 	this.actors[end.x][end.y] = t;
-
 };
 
 Prospectors.prototype.shift = function(start, end) {
-
 	this.actors[start.x][start.y].updateCoords(end.x, end.y);
 	this.actors[end.x][end.y] = this.actors[start.x][start.y];
-
 };
 
 Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 	// Drop every block above this y down a position.
-	// Reduce integrity of base?
+	// Reduce integrity of base
 	var start, end;
 	for(var j = y-1; j >= 0; j--) {
 		start = { x: x, y: j };
@@ -484,7 +389,6 @@ Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
 		this.swap(start, end);
 	}
 	// Drop in the block that was destroyed.
-	// The timeouts are causing a display mismatch??
 	var dropBlock = function (block) {
 		setTimeout(block.fallIn(block, callback), 0);
 	}(this.actors[x][0]);
@@ -598,7 +502,6 @@ var Block = function(world, x, y, type) {
 		var drop = this.makeDrop();
 		//console.log("LOOT: " + drop);
 		if (drop) {
-			// world.eventQueue.unshift(drop);
 			world.animateDrop(this.x, this.y, drop);
 			this.world.player.addLoot(drop);
 		}
@@ -754,13 +657,8 @@ var Display = function(parent, world) {
 		this.wrap = parent.appendChild(this.wrap);
 	};
 
-	this.drawFrame = function() {
-		// Implement
-	};
-
 	this.drawBackground = function(backgroundLayer) {
 		this.wrap.appendChild(backgroundLayer);
-		// create an element and save it as this.backgroundLayer
 	};
 
 	this.drawActors = function() {
