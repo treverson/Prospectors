@@ -156,242 +156,242 @@ var DOM = {
 	}
 };
 
-// This is a bad way to do things I think.
-var Prospectors = function() {};
-Prospectors.prototype.init = function(display, player) {
+var Prospectors = function() {
+	this.init = function(display, player) {
 
-	// Send elements to Display to draw.
-	this.display = display;
+		// Send elements to Display to draw.
+		this.display = display;
 
-	this.player = player;
+		this.player = player;
 
-	// The state of the game. Options include:
-	// 'ready'		--> Player may place dynamite on the map.
-	// 'acting'		--> Animation is occurring (actors are acting).
-	this.state = 'ready';
+		// The state of the game. Options include:
+		// 'ready'		--> Player may place dynamite on the map.
+		// 'acting'		--> Animation is occurring (actors are acting).
+		this.state = 'ready';
 
-	// The keys we care about. These are examples at the moment.
-	this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
+		// The keys we care about. These are examples at the moment.
+		this.keyCodes = { 37: 'left', 38: 'up', 39: 'right', 40: 'down' };
 
-	// Things to be destroyed in order.
-	this.destroyQueue = [];
+		// Things to be destroyed in order.
+		this.destroyQueue = [];
 
-	// The positions of all the actors
-	this.actors;
+		// The positions of all the actors
+		this.actors;
 
-	// Game size variables.
-	// width & height refer to number of blocks
-	this.width = 15;
-	this.height = 15;
-	// scale refers to size of block in pixels.
-	this.scale = 30;
+		// Game size variables.
+		// width & height refer to number of blocks
+		this.width = 15;
+		this.height = 15;
+		// scale refers to size of block in pixels.
+		this.scale = 30;
 
-	// Variables for randomly placing explosives
-	this.randomSeedNum = 5;
-	this.maxExplosives = Math.floor(this.width * this.height * .15);
+		// Variables for randomly placing explosives
+		this.randomSeedNum = 5;
+		this.maxExplosives = Math.floor(this.width * this.height * .15);
 
-	// Initializes our this.actors
-	this.createActors();
+		// Initializes our this.actors
+		this.createActors();
 
-	// Initialize display.
-	this.display.init();
+		// Initialize display.
+		this.display.init();
 
-	// Draw initial frame
-	this.display.drawBackground(this.createBackgroundLayer());
-	this.display.drawActors(this.actors);
-};
+		// Draw initial frame
+		this.display.drawBackground(this.createBackgroundLayer());
+		this.display.drawActors(this.actors);
+	};
 
-Prospectors.prototype.animateDrop = function(x, y, item) {
-	this.display.animateDrop((x * this.scale), (y * this.scale), item, 0, 0);
-};
+	this.animateDrop = function(x, y, item) {
+		this.display.animateDrop((x * this.scale), (y * this.scale), item, 0, 0);
+	};
 
-Prospectors.prototype.getItem = function() {
-	return Utils.getValByWeights(Items.items, 'mult');
-};
+	this.getItem = function() {
+		return Utils.getValByWeights(Items.items, 'mult');
+	};
 
-Prospectors.prototype.prepForDestroy = function(x, y, callback) {
-	if (this.destroyQueue.length < this.maxExplosives) {
-		this.destroyQueue.push({ x: x, y: y });
+	this.prepForDestroy = function(x, y, callback) {
+		if (this.destroyQueue.length < this.maxExplosives) {
+			this.destroyQueue.push({ x: x, y: y });
+			if (callback) {
+				callback();
+			}
+		}
+	};
+
+	this.restoreFromDestroy = function(x, y, callback) {
+		for (var i = 0; i < this.destroyQueue.length; i++) {
+			if (this.destroyQueue[i].x === x && this.destroyQueue[i].y === y) {
+				this.destroyQueue.splice(i, 1);
+				break;
+			}
+		}
 		if (callback) {
 			callback();
 		}
-	}
-};
-
-Prospectors.prototype.restoreFromDestroy = function(x, y, callback) {
-	for (var i = 0; i < this.destroyQueue.length; i++) {
-		if (this.destroyQueue[i].x === x && this.destroyQueue[i].y === y) {
-			this.destroyQueue.splice(i, 1);
-			break;
-		}
-	}
-	if (callback) {
-		callback();
-	}
-};
-
-Prospectors.prototype.weakenNeighbors = function(x, y) {
-	var nX, nY;
-	// Iterate through neighboring blocks and weaken them.
-	[
-		[-1, 0],
-		[1, 0],
-		[0, 1]
-	].forEach(function(pair) {
-		nX = x + pair[0];
-		nY = y + pair[1];
-		if (this.actors[nX] && this.actors[nX][nY]) {
-			this.actors[nX][nY].weaken(this.actors[x][y].weight);
-		}
-	}.bind(this));
-};
-
-Prospectors.prototype.doPlay = function() {
-	this.state = 'acting';
-	this.destroyQueue.sort(Utils.sortByY); // Is this the best way?
-	var callback = function() {
-		doExplodes()
 	};
 
-	var doExplodes = function() {
-		if (this.destroyQueue.length) {
-			var a = this.destroyQueue.pop();
-			this.weakenNeighbors(a.x, a.y);
-			this.actors[a.x][a.y].explode(callback);
-		} else {
-			this.state = 'ready';
-		}
-	}.bind(this);
+	this.weakenNeighbors = function(x, y) {
+		var nX, nY;
+		// Iterate through neighboring blocks and weaken them.
+		[
+			[-1, 0],
+			[1, 0],
+			[0, 1]
+		].forEach(function(pair) {
+			nX = x + pair[0];
+			nY = y + pair[1];
+			if (this.actors[nX] && this.actors[nX][nY]) {
+				this.actors[nX][nY].weaken(this.actors[x][y].weight);
+			}
+		}.bind(this));
+	};
 
-	doExplodes();
-};
-
-Prospectors.prototype.randomlyMark = function() {
-	var randomBlocks = {},
-		nCoords,
-		k;
-
-	// Add random blocks until we have the correct amount (without going over limit)
-	while (Object.keys(randomBlocks).length < this.randomSeedNum && this.destroyQueue.length < this.maxExplosives) {
-		nCoords = {
-			x: Math.floor(Math.random() * this.width),
-			y: Math.floor(Math.random() * this.height)
+	this.doPlay = function() {
+		this.state = 'acting';
+		this.destroyQueue.sort(Utils.sortByY); // Is this the best way?
+		var callback = function() {
+			doExplodes()
 		};
-		k = nCoords.x + '-' + nCoords.y;
-		randomBlocks[k] = nCoords;
-	}
 
-	for (var i in randomBlocks) {
-		this.actors[randomBlocks[i].x][randomBlocks[i].y].mark();
-	}
-};
+		var doExplodes = function() {
+			if (this.destroyQueue.length) {
+				var a = this.destroyQueue.pop();
+				this.weakenNeighbors(a.x, a.y);
+				this.actors[a.x][a.y].explode(callback);
+			} else {
+				this.state = 'ready';
+			}
+		}.bind(this);
 
-Prospectors.prototype.doRandSeed = function() {
-	if (this.state === 'ready') {
-		this.randomlyMark();
-	}
-};
+		doExplodes();
+	};
 
-Prospectors.prototype.createBackgroundLayer = function() {
-	// Create menu
-	var menu = DOM.create('div', 'menu');
-	// Create play button
-	var play = DOM.create('button', 'clickable button norm-play');
-	play.innerHTML = 'PLAY';
-	// Play onclick function (bind this)
-	play.onclick = function() {
-		this.doPlay();
-	}.bind(this);
+	this.randomlyMark = function() {
+		var randomBlocks = {},
+			nCoords,
+			k;
 
-	// Create "random seed" button
-	var randomSeedWrapper = DOM.create('div', 'rand-play-wrapper');
-	var randomSeed = DOM.create('button', 'clickable button rand-play');
-	randomSeed.innerHTML = 'RANDOM SEED';
-	// randomSeed onclick function (bind this)
-	randomSeed.onclick = function() {
-		this.doRandSeed();
-	}.bind(this);
-
-	// Display randomSeedNum
-	var randomSeedNumEl = DOM.create('div', 'rand-play-num');
-	randomSeedNumEl.innerHTML = this.randomSeedNum.toString();
-
-	// Increment randomSeedNum button
-	var upTriangle = DOM.create('a', 'clickable button up-triangle');
-	upTriangle.onclick = function() {
-		if (this.randomSeedNum < this.player.numExplosives && this.randomSeedNum < this.maxExplosives) {
-			this.randomSeedNum += 1;
-			document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+		// Add random blocks until we have the correct amount (without going over limit)
+		while (Object.keys(randomBlocks).length < this.randomSeedNum && this.destroyQueue.length < this.maxExplosives) {
+			nCoords = {
+				x: Math.floor(Math.random() * this.width),
+				y: Math.floor(Math.random() * this.height)
+			};
+			k = nCoords.x + '-' + nCoords.y;
+			randomBlocks[k] = nCoords;
 		}
-	}.bind(this);
 
-	// Decrement randomSeedNum button
-	var downTriangle = DOM.create('a', 'clickable button down-triangle');
-	downTriangle.onclick = function() {
-		if (this.randomSeedNum > 1) {
-			this.randomSeedNum -= 1;
-			document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+		for (var i in randomBlocks) {
+			this.actors[randomBlocks[i].x][randomBlocks[i].y].mark();
 		}
-	}.bind(this);
+	};
 
-	// Container for increment/decrement buttons
-	var triangleContainer = DOM.create('div', 'triangle-container');
-	triangleContainer.appendChild(upTriangle);
-	triangleContainer.appendChild(downTriangle);
-
-	var randomSeedNumContainer = DOM.create('div', 'rand-play-num-container');
-	randomSeedNumContainer.appendChild(randomSeedNumEl);
-	randomSeedNumContainer.appendChild(triangleContainer);
-
-	randomSeedWrapper.appendChild(randomSeed);
-	randomSeedWrapper.appendChild(randomSeedNumContainer);
-
-	menu.appendChild(play);
-	menu.appendChild(randomSeedWrapper);
-	DOM.style(menu, {
-		width: (this.scale * this.width) + 'px'
-	});
-	return menu;
-};
-
-Prospectors.prototype.createActors = function() {
-	this.actors = [];
-	for(var i = 0; i < this.width; i++) {
-		var actorGridRow = [];
-		for(var j = 0; j < this.height; j++) {
-			actorGridRow.push(new Block(this, i, j));
+	this.doRandSeed = function() {
+		if (this.state === 'ready') {
+			this.randomlyMark();
 		}
-		this.actors.push(actorGridRow);
-	}
-};
+	};
 
-Prospectors.prototype.swap = function(start, end) {
-	this.actors[start.x][start.y].updateCoords(end.x, end.y);
-	this.actors[end.x][end.y].updateCoords(start.x, start.y);
+	this.createBackgroundLayer = function() {
+		// Create menu
+		var menu = DOM.create('div', 'menu');
+		// Create play button
+		var play = DOM.create('button', 'clickable button norm-play');
+		play.innerHTML = 'PLAY';
+		// Play onclick function (bind this)
+		play.onclick = function() {
+			this.doPlay();
+		}.bind(this);
 
-	var t = this.actors[start.x][start.y];
-	this.actors[start.x][start.y] = this.actors[end.x][end.y];
-	this.actors[end.x][end.y] = t;
-};
+		// Create "random seed" button
+		var randomSeedWrapper = DOM.create('div', 'rand-play-wrapper');
+		var randomSeed = DOM.create('button', 'clickable button rand-play');
+		randomSeed.innerHTML = 'RANDOM SEED';
+		// randomSeed onclick function (bind this)
+		randomSeed.onclick = function() {
+			this.doRandSeed();
+		}.bind(this);
 
-Prospectors.prototype.shift = function(start, end) {
-	this.actors[start.x][start.y].updateCoords(end.x, end.y);
-	this.actors[end.x][end.y] = this.actors[start.x][start.y];
-};
+		// Display randomSeedNum
+		var randomSeedNumEl = DOM.create('div', 'rand-play-num');
+		randomSeedNumEl.innerHTML = this.randomSeedNum.toString();
 
-Prospectors.prototype.dropBlocksTo = function(x, y, callback) {
-	// Drop every block above this y down a position.
-	// Reduce integrity of base
-	var start, end;
-	for(var j = y-1; j >= 0; j--) {
-		start = { x: x, y: j };
-		end = { x: x, y: j + 1 };
-		this.swap(start, end);
-	}
-	// Drop in the block that was destroyed.
-	var dropBlock = function (block) {
-		setTimeout(block.fallIn(block, callback), 0);
-	}(this.actors[x][0]);
+		// Increment randomSeedNum button
+		var upTriangle = DOM.create('a', 'clickable button up-triangle');
+		upTriangle.onclick = function() {
+			if (this.randomSeedNum < this.player.numExplosives && this.randomSeedNum < this.maxExplosives) {
+				this.randomSeedNum += 1;
+				document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+			}
+		}.bind(this);
+
+		// Decrement randomSeedNum button
+		var downTriangle = DOM.create('a', 'clickable button down-triangle');
+		downTriangle.onclick = function() {
+			if (this.randomSeedNum > 1) {
+				this.randomSeedNum -= 1;
+				document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+			}
+		}.bind(this);
+
+		// Container for increment/decrement buttons
+		var triangleContainer = DOM.create('div', 'triangle-container');
+		triangleContainer.appendChild(upTriangle);
+		triangleContainer.appendChild(downTriangle);
+
+		var randomSeedNumContainer = DOM.create('div', 'rand-play-num-container');
+		randomSeedNumContainer.appendChild(randomSeedNumEl);
+		randomSeedNumContainer.appendChild(triangleContainer);
+
+		randomSeedWrapper.appendChild(randomSeed);
+		randomSeedWrapper.appendChild(randomSeedNumContainer);
+
+		menu.appendChild(play);
+		menu.appendChild(randomSeedWrapper);
+		DOM.style(menu, {
+			width: (this.scale * this.width) + 'px'
+		});
+		return menu;
+	};
+
+	this.createActors = function() {
+		this.actors = [];
+		for(var i = 0; i < this.width; i++) {
+			var actorGridRow = [];
+			for(var j = 0; j < this.height; j++) {
+				actorGridRow.push(new Block(this, i, j));
+			}
+			this.actors.push(actorGridRow);
+		}
+	};
+
+	this.swap = function(start, end) {
+		this.actors[start.x][start.y].updateCoords(end.x, end.y);
+		this.actors[end.x][end.y].updateCoords(start.x, start.y);
+
+		var t = this.actors[start.x][start.y];
+		this.actors[start.x][start.y] = this.actors[end.x][end.y];
+		this.actors[end.x][end.y] = t;
+	};
+
+	this.shift = function(start, end) {
+		this.actors[start.x][start.y].updateCoords(end.x, end.y);
+		this.actors[end.x][end.y] = this.actors[start.x][start.y];
+	};
+
+	this.dropBlocksTo = function(x, y, callback) {
+		// Drop every block above this y down a position.
+		// Reduce integrity of base
+		var start, end;
+		for(var j = y-1; j >= 0; j--) {
+			start = { x: x, y: j };
+			end = { x: x, y: j + 1 };
+			this.swap(start, end);
+		}
+		// Drop in the block that was destroyed.
+		var dropBlock = function (block) {
+			setTimeout(block.fallIn(block, callback), 0);
+		}(this.actors[x][0]);
+	};
 };
 
 var BlockConfig = {
