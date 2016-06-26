@@ -198,6 +198,12 @@ var Prospectors = function() {
 		// Draw initial frame
 		this.display.drawBackground(this.createBackgroundLayer());
 		this.display.drawActors(this.actors);
+
+		return this;
+	};
+
+	this.render = function() {
+
 	};
 
 	this.animateDrop = function(x, y, item) {
@@ -563,37 +569,6 @@ var Block = function(world, x, y, type) {
 	};
 };
 
-var Player = function(rootEl) {
-	this.numExplosives = 200;
-	this.loot = {};
-
-	this.init = function() {
-		this.createOverlay();
-	};
-
-	// Show or hide the player's inventory.
-	this.toggleInventory = function() {
-		// Implement
-	};
-
-	// Create inventory overlay.
-	this.createOverlay = function() {
-		this.overlay = DOM.create('div', 'inventory-overlay clickable');
-		rootEl.appendChild(this.overlay);
-	}
-
-	this.addLoot = function(item) {
-		if (this.loot[item]) {
-			this.loot[item] += 1;
-		} else {
-			this.loot[item] = 1;
-		}
-	};
-
-	this.init();
-};
-
-
 var Item = function() {
 	var itemWidth = 0.8;
 
@@ -632,64 +607,4 @@ var Item = function() {
 			setTimeout(callback.bind(this), 500);
 		}.bind(this), 100);
 	};
-}
-
-/*
-Try to generalize this function so that we can 
-have multiple displays with different behavior
-(e.g. a Player display and a Game display).
-*/
-var Display = function(parent, world) {
-
-	this.wrap;
-	this.game;
-	this.backgroundLayer;
-	this.actorLayer;
-
-	this.init = function() {
-		this.wrap = DOM.create('div', 'game-wrapper');
-		this.game = DOM.create('div', 'game');
-		DOM.style(this.game, {
-			width: (world.scale * world.width) + 'px',
-			height: (world.scale * world.height) + 'px'
-		})
-		this.wrap.appendChild(this.game);
-		this.wrap = parent.appendChild(this.wrap);
-	};
-
-	this.drawBackground = function(backgroundLayer) {
-		this.wrap.appendChild(backgroundLayer);
-	};
-
-	this.drawActors = function() {
-		// Draw actors, save in this.actorLayer
-		// The actorLayer, I guess, should be an element super-imposed on the backgroundLayer element.
-		this.actorLayer = DOM.create('div', 'actor-layer');
-		for (var i = 0; i < world.width; i++) {
-			for (var j = 0; j < world.height; j++) {
-				this.actorLayer.appendChild(world.actors[i][j].blockEl);
-			}
-		}
-		this.game.appendChild(this.actorLayer);
-	};
-
-	// Destination is dX, dY. This is found from the location of the spot in inventory.
-	// TODO: Create a stylesheet for the items! Calculate values based on the Prospectors.scale
-	this.animateDrop = function(x, y, item, dX, dY) {
-		var newItem = new Item();
-		newItem.init(x, y, item, world.scale);
-		this.actorLayer.appendChild(newItem.itemEl);
-		newItem.sendToDestination(0,0);
-	}
-
-	this.removeActors = function() {
-		// Remove actors
-		// I'm thinking Display should take a World because then the Display can operate on a generic World.
-	};
-};
-
-var main = function(world) {
-	var display = new Display(document.body, world);
-	var player = new Player(document.body);
-	world.init(display, player);
 };

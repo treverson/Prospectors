@@ -25,4 +25,11 @@ Requirements:
 
 var Inventory = function(player) {
 	// Requires implementation...
+
+	// TODO: Need "render" function (see overlay.js)
+	this.render = function(display) {
+		this.mainEl = DOM.create('div', 'inventory-overlay clickable');
+		display.appendChild(this.mainEl);
+	};
+
 }
