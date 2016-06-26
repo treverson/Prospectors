@@ -7,51 +7,58 @@ Create a general display function (in World), add methods to it in each view (e.
 */
 var Display = function(world) {
 
-	var parent = document.body;
-	this.wrap;
-	this.game;
-	this.backgroundLayer;
-	this.actorLayer;
-
-	this.init = function() {
-		this.wrap = DOM.create('div', 'game-wrapper');
-		this.game = DOM.create('div', 'game');
-		DOM.style(this.game, {
-			width: (world.scale * world.width) + 'px',
-			height: (world.scale * world.height) + 'px'
-		});
-		this.wrap.appendChild(this.game);
-		this.wrap = parent.appendChild(this.wrap);
+	this.layers = {
+		parent: {
+			parent: null,
+			el: document.body
+		},
+		wrap: {
+			parent: 'parent',
+			el: null
+		},
+		game: {
+			parent: 'wrap',
+			el: null
+		},
+		background: {
+			parent: 'wrap',
+			el: null
+		},
+		actor: {
+			parent: 'game',
+			el: null
+		}
 	};
+
+	this.layers.wrap.el = this.layers.parent.el.appendChild(DOM.create('div', 'game-wrapper'))
+
+	this.drawLayer = function(layer, el) {
+		if (this.layers[layer] && this.layers[layer].parent) {
+			var l = this.layers[layer];
+			var p = this.layers[l.parent];
+			l.el = p.el.appendChild(el);
+		} else {
+			console.log("Layer: ", this.layers[layer]);
+			console.log("Parent: ", this.layers[this.layers[layer].parent]);
+			throw "One of the above does not exist";
+		}
+	}
 
 	this.drawBackground = function(backgroundLayer) {
-		this.wrap.appendChild(backgroundLayer);
+		this.backgroundLayer = this.wrap.appendChild(backgroundLayer);
 	};
 
-	this.appendChild = function(el) {
-		parent.appendChild(el);
+	this.drawGame = function(gameLayer) {
+		this.game = this.wrap.appendChild(gameLayer);
 	};
 
-	this.drawActors = function() {
-		// Draw actors, save in this.actorLayer
-		// The actorLayer, I guess, should be an element super-imposed on the backgroundLayer element.
-		this.actorLayer = DOM.create('div', 'actor-layer');
-		for (var i = 0; i < world.width; i++) {
-			for (var j = 0; j < world.height; j++) {
-				this.actorLayer.appendChild(world.actors[i][j].blockEl);
-			}
-		}
-		this.game.appendChild(this.actorLayer);
-	};
-
-	// Destination is dX, dY. This is found from the location of the spot in inventory.
-	// TODO: Create a stylesheet for the items! Calculate values based on the Prospectors.scale
-	this.animateDrop = function(x, y, item, dX, dY) {
-		var newItem = new Item();
-		newItem.init(x, y, item, world.scale);
-		this.actorLayer.appendChild(newItem.itemEl);
-		newItem.sendToDestination(0,0);
+	this.addActor = function(el) {
+		this.layers.actor.el.appendChild(el);
 	}
+
+	this.drawActors = function(actorLayer) {
+		this.actorLayer = this.game.appendChild(actorLayer);
+	};
 
 	this.removeActors = function() {
 		// Remove actors

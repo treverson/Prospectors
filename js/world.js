@@ -5,14 +5,14 @@ There is an overlay layer & a view layer
 */
 
 var World = function(v) {
-	var view = new v();
-	var display = new Display(view); // Ideally we won't need to pass view to display, I think. Need to refactor.
-	var overlay = new Overlay(display);
+	var display = new Display(); // Ideally we won't need to pass view to display, I think. Need to refactor.
 	var player = new Player();
+	var view = new v(display, player);
+	var overlay = new Overlay(display, player);
 
 	// init -> create overlay, draw view, save view state.
 	this.init = function() {
-		view.init(display, player).render();
+		view.init().render();
 		overlay.render();
 	};
 
