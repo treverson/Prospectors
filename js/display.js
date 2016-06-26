@@ -44,21 +44,9 @@ var Display = function(world) {
 		}
 	}
 
-	this.drawBackground = function(backgroundLayer) {
-		this.backgroundLayer = this.wrap.appendChild(backgroundLayer);
-	};
-
-	this.drawGame = function(gameLayer) {
-		this.game = this.wrap.appendChild(gameLayer);
-	};
-
 	this.addActor = function(el) {
 		this.layers.actor.el.appendChild(el);
 	}
-
-	this.drawActors = function(actorLayer) {
-		this.actorLayer = this.game.appendChild(actorLayer);
-	};
 
 	this.removeActors = function() {
 		// Remove actors
