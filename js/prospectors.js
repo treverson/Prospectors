@@ -89,75 +89,8 @@ var Items = {
 	}
 };
 
-var Utils = {
-	printCoords: function(x, y) {
-		return '(' + x + ', ' + y + ')';
-	},
-	sortByY: function(a, b) {
-		if (a.y < b.y) {
-			return 1;
-		} else if (a.y === b.y) {
-			return 0;
-		} else {
-			return -1;
-		}
-	},
-	pushByY: function(arr, coords) {
-		for (var i = 0; i < arr.length; i++) {
-			if (arr[i].y < coords.y) {
-				arr.splice(i, 0, coords);
-				return;
-			}
-		}
-		arr.push(coords);
-	},
-	getValByWeights: function(data, weightProp, valProp) {
-		var rand = Math.random();
-		var multTotal = 0;
-		for (var i in data) {
-			multTotal += data[i][weightProp];
-		}
-		var inverseMultTotal = 1 / multTotal; // Inverse to create ratios with.
-		var runningTotal = 0; // Keep track of previous work.
-		for (var i in data) {
-			runningTotal += data[i][weightProp];
-			if (rand < (runningTotal * inverseMultTotal)) {
-				// Either return the desired value or the name of the winning property.
-				return valProp ? data[i][valProp] : i;
-			}
-		}
-
-		throw "Could not choose a " + weightProp + " in " + data + "!";
-	},
-	join: function(objA, objB) {
-		for (var i in objB) {
-			objA[i] = objB[i];
-		}
-	},
-	rand: function(min, max) {
-		return Math.floor(Math.random() * (max - min + 1)) + min;	
-	}
-};
-
-var DOM = {
-	// Create a new DOM element.
-	create: function (name, className) {
-		var elt = document.createElement(name);
-		if (className) {
-			elt.className = className;
-		}
-		return elt;	
-	},
-
-	style: function(el, styles) {
-		for (var k in styles) {
-			el.style[k] = styles[k];
-		}
-	}
-};
-
-var Prospectors = function() {
-	this.init = function(display, player) {
+var Prospectors = function(display, player) {
+	this.init = function() {
 
 		// Send elements to Display to draw.
 		this.display = display;
@@ -192,22 +125,39 @@ var Prospectors = function() {
 		// Initializes our this.actors
 		this.createActors();
 
-		// Initialize display.
-		this.display.init();
-
-		// Draw initial frame
-		this.display.drawBackground(this.createBackgroundLayer());
-		this.display.drawActors(this.actors);
-
 		return this;
 	};
 
 	this.render = function() {
+		var game = DOM.create('div', 'game');
+		DOM.style(game, {
+			width: (this.scale * this.width) + 'px',
+			height: (this.scale * this.height) + 'px'
+		});
+		this.display.drawLayer('game', game);
+		// Initialize display.
+		// Draw initial frame
+		this.display.drawLayer('background', this.createBackgroundLayer());
+		this.display.drawLayer('actor', this.createActorLayer());
+	};
 
+	this.createActorLayer = function() {
+		// Draw actors, save in this.actorLayer
+		// The actorLayer, I guess, should be an element super-imposed on the backgroundLayer element.
+		var actorLayer = DOM.create('div', 'actor-layer');
+		for (var i = 0; i < this.width; i++) {
+			for (var j = 0; j < this.height; j++) {
+				actorLayer.appendChild(this.actors[i][j].blockEl);
+			}
+		}
+
+		return actorLayer;
 	};
 
 	this.animateDrop = function(x, y, item) {
-		this.display.animateDrop((x * this.scale), (y * this.scale), item, 0, 0);
+		var newItem = new Item((x * this.scale), (y * this.scale), item, this.scale);
+		this.display.addActor(newItem.itemEl);
+		newItem.sendToDestination(0,0);
 	};
 
 	this.getItem = function() {
@@ -569,25 +519,24 @@ var Block = function(world, x, y, type) {
 	};
 };
 
-var Item = function() {
-	var itemWidth = 0.8;
+// This is a specific item in the prospectors game.
+var Item = function(x, y, name, scale) {
+	var itemWidth = 0.8; // Magic numbers not ideal...
 
-	this.init = function(x, y, name, scale) {
-		this.x = x;
-		this.y = y;
-		this.name = name;
-		this.itemEl = DOM.create('div', 'item');
-		this.scale = scale;
-		
-		DOM.style(this.itemEl, {
-			backgroundImage: 'url("image/' + this.name + '.png")',
-			left: this.x + 'px',
-			top: this.y + 'px',
-			margin: (scale - (scale * itemWidth))/2 + 'px',
-			width: (scale * itemWidth) + 'px',
-			height: (scale * itemWidth) + 'px'
-		});
-	};
+	this.x = x;
+	this.y = y;
+	this.name = name;
+	this.itemEl = DOM.create('div', 'item');
+	this.scale = scale;
+	
+	DOM.style(this.itemEl, {
+		backgroundImage: 'url("image/' + this.name + '.png")',
+		left: this.x + 'px',
+		top: this.y + 'px',
+		margin: (scale - (scale * itemWidth))/2 + 'px',
+		width: (scale * itemWidth) + 'px',
+		height: (scale * itemWidth) + 'px'
+	});
 
 	this.sendToDestination = function(dx, dy) {
 		var callback = function() {
