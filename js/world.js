@@ -33,12 +33,10 @@ define(['display', 'player', 'overlay', 'city'], function(Display, Player, Overl
 			// If we are given a function, we need to instantiate it.
 			view.destroy();
 			if(typeof(newView) === 'function') {
-				console.log('you are at city and want to switch to prospectors');
 				view = new newView(display, player, config);
 				overlay.view = view;
 				view.init().render();
 			} else {
-				console.log('you are at prospectors and want to switch to city');
 				view = newView;
 				overlay.view = newView;
 				view.render();

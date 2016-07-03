@@ -18,6 +18,7 @@ define(function() {
 		*/
 		var e;
 		for (var k in elements) {
+			// We are only saving the last one!! Do it better.
 			e = document.createElement(k);
 			for (var k2 in elements[k]) {
 				if (k2 !== 'children') {

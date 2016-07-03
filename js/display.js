@@ -21,16 +21,16 @@ define(['dom'], function(DOM) {
 				parent: 'wrap',
 				el: null
 			},
-			game: {
+			view: {
 				parent: 'wrap',
 				el: null
 			},
 			actor: {
-				parent: 'game',
+				parent: 'view',
 				el: null
 			},
 			background: {
-				parent: 'game',
+				parent: 'view',
 				el: null
 			}
 			// <body>
@@ -61,6 +61,7 @@ define(['dom'], function(DOM) {
 			if (this.layers[layer] && this.layers[layer].parent) {
 				var l = this.layers[layer],
 					p = this.layers[l.parent];
+				l.el.remove();	
 				l.el = p.el.appendChild(el);
 			} else {
 				console.log("Layer: ", this.layers[layer]);
