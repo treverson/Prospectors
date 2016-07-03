@@ -24,14 +24,6 @@ define(['dom'], function(DOM) {
 			view: {
 				parent: 'wrap',
 				el: null
-			},
-			actor: {
-				parent: 'view',
-				el: null
-			},
-			background: {
-				parent: 'view',
-				el: null
 			}
 			// <body>
 			// 	<wrap>
@@ -61,8 +53,7 @@ define(['dom'], function(DOM) {
 			if (this.layers[layer] && this.layers[layer].parent) {
 				var l = this.layers[layer],
 					p = this.layers[l.parent];
-				l.el.remove();	
-				l.el = p.el.appendChild(el);
+				l.el.appendChild(el);
 			} else {
 				console.log("Layer: ", this.layers[layer]);
 				console.log("Parent: ", this.layers[this.layers[layer].parent]);
@@ -71,14 +62,13 @@ define(['dom'], function(DOM) {
 		};
 
 		this.destroy = function(layers) {
+			var p, e;
 			layers.forEach(function(layer) {
-				this.layers[layer].el.remove();
-				this.init();
+				p = this.layers[layer].parent;
+				while(this.layers[layer].el.firstChild) {
+					this.layers[layer].el.removeChild(this.layers[layer].el.firstChild);
+				}
 			}.bind(this));
-		};
-
-		this.addActor = function(el) {
-			this.layers.actor.el.appendChild(el);
 		};
 
 		this.removeActors = function() {

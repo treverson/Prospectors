@@ -122,10 +122,10 @@ define(['utils', 'dom'], function(Utils, DOM) {
 		this.init = function() {
 			// Initializes our this.actors
 			this.createActors();
+			this.actorLayer = this.createActorLayer();
+			this.backgroundLayer = this.createBackgroundLayer();
 			this.toDraw = {
 				view: this.createGameLayer(),
-				background: this.createBackgroundLayer(),
-				actor: this.createActorLayer()
 			};
 			return this;
 		};
@@ -147,6 +147,8 @@ define(['utils', 'dom'], function(Utils, DOM) {
 				width: (this.scale * this.width) + 'px',
 				height: (this.scale * this.height) + 'px'
 			});
+			game.appendChild(this.backgroundLayer);
+			game.appendChild(this.actorLayer);
 			return game;
 		};
 
@@ -228,7 +230,7 @@ define(['utils', 'dom'], function(Utils, DOM) {
 
 		this.animateDrop = function(x, y, item) {
 			var newItem = new Item((x * this.scale), (y * this.scale), item, this.scale);
-			this.display.addActor(newItem.itemEl);
+			this.actorLayer.appendChild(newItem.itemEl);
 			newItem.sendToDestination(0,0);
 		};
 

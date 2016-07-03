@@ -26,7 +26,7 @@ define(['dom'], function(DOM) {
 		*/
 		this.init = function() {
 			this.toDraw = {
-				background: this.createBackgroundLayer()
+				view: this.createViewLayer()
 			}
 			return this;
 		};
@@ -42,8 +42,14 @@ define(['dom'], function(DOM) {
 			this.display.destroy(Object.keys(this.toDraw));
 		};
 
-		this.createBackgroundLayer = function() {
-			return DOM.create('div', 'city-bg');
+		this.createViewLayer = function() {
+			var bg = DOM.create('div', 'city-bg');
+			DOM.style(bg, {
+				width: '600px',
+				height: '400px'
+			});
+			return bg;
+
 		}
 	};
 });

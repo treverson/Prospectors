@@ -12,13 +12,6 @@ body {
 	cursor: hand;
 }
 
-.background {
-	background: rgb(52, 166, 251);
-    table-layout: fixed;
-    border-spacing: 0;
-	margin: 0 auto;
-}
-
 .item {
 	position: absolute;
 	background-size: contain;
@@ -27,10 +20,6 @@ body {
 	transition: all 0.35s ease;
 	-webkit-transition: all 0.35s ease;
 	-moz-transition: all 0.35s ease;
-}
-
-.background td {
-	padding: 0;
 }
 
 .inventory-overlay {
@@ -173,6 +162,10 @@ button.button.rand-play {
 .player {
 	border: 1px solid #fff;
 	background-color: blue;
+}
+
+.city-bg {
+	background-image: url('../image/border.png');
 }
 
 .enemy {

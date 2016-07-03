@@ -38,7 +38,7 @@ define(['display', 'player', 'overlay', 'city'], function(Display, Player, Overl
 				view.init().render();
 			} else {
 				view = newView;
-				overlay.view = newView;
+				overlay.view = view;
 				view.render();
 			}
 		};
