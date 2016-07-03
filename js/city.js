@@ -25,16 +25,22 @@ define(['dom'], function(DOM) {
 				- When reach the edge, reposition so player standing in center.
 		*/
 		this.init = function() {
+			this.toDraw = {
+				background: this.createBackgroundLayer()
+			}
 			return this;
 		};
 
 		this.render = function() {
-			this.display.drawLayer('background', this.createBackgroundLayer());
-		}
+			// Draw initial frame
+			for (var k in this.toDraw) {
+				this.display.drawLayer(k, this.toDraw[k]);
+			}
+		};
 
 		this.destroy = function() {
-			this.display.destroy(['background']);
-		}
+			this.display.destroy(Object.keys(this.toDraw));
+		};
 
 		this.createBackgroundLayer = function() {
 			return DOM.create('div', 'city-bg');

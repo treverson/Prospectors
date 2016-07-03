@@ -6,7 +6,7 @@ There is an overlay layer & a view layer
 
 define(['display', 'player', 'overlay', 'city'], function(Display, Player, Overlay, City) {
 	return function(v) {
-		var view, display, player, overlay;
+		var view, display, player, overlay, city;
 		var config = {
 			blockSize: 30
 		};
@@ -14,12 +14,14 @@ define(['display', 'player', 'overlay', 'city'], function(Display, Player, Overl
 		// init -> create overlay, draw view, save view state.
 		this.init = function() {
 			display = new Display();
+			city = new City(display, player, config).init();
+			player = new Player(city);
 			if (v) {
 				view = new v(display, player, config);
 			} else {
-				view = new City(display, player, config);
+				view = city;
 			}
-			player = new Player(view);
+			
 			overlay = new Overlay(display, player, view, this);
 			view.init().render();
 			overlay.render();

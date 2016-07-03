@@ -122,21 +122,16 @@ define(['utils', 'dom'], function(Utils, DOM) {
 		this.init = function() {
 			// Initializes our this.actors
 			this.createActors();
+			this.toDraw = {
+				game: this.createGameLayer(),
+				background: this.createBackgroundLayer(),
+				actor: this.createActorLayer()
+			};
 			return this;
 		};
 
 		this.render = function() {
-			var game = DOM.create('div', 'game');
-			DOM.style(game, {
-				width: (this.scale * this.width) + 'px',
-				height: (this.scale * this.height) + 'px'
-			});
 			// Draw initial frame
-			this.toDraw = {
-				game: game,
-				background: this.createBackgroundLayer(),
-				actor: this.createActorLayer()
-			};
 			for (var k in this.toDraw) {
 				this.display.drawLayer(k, this.toDraw[k]);
 			}
@@ -146,66 +141,162 @@ define(['utils', 'dom'], function(Utils, DOM) {
 			this.display.destroy(Object.keys(this.toDraw));
 		};
 
-		this.createBackgroundLayer = function() {
-			// Create menu
-			var menu = DOM.create('div', 'menu');
-			// Create play button
-			var play = DOM.create('button', 'clickable button norm-play');
-			play.innerHTML = 'PLAY';
-			// Play onclick function (bind this)
-			play.onclick = function() {
-				this.doPlay();
-			}.bind(this);
-
-			// Create "random seed" button
-			var randomSeedWrapper = DOM.create('div', 'rand-play-wrapper');
-			var randomSeed = DOM.create('button', 'clickable button rand-play');
-			randomSeed.innerHTML = 'RANDOM SEED';
-			// randomSeed onclick function (bind this)
-			randomSeed.onclick = function() {
-				this.doRandSeed();
-			}.bind(this);
-
-			// Display randomSeedNum
-			var randomSeedNumEl = DOM.create('div', 'rand-play-num');
-			randomSeedNumEl.innerHTML = this.randomSeedNum.toString();
-
-			// Increment randomSeedNum button
-			var upTriangle = DOM.create('a', 'clickable button up-triangle');
-			upTriangle.onclick = function() {
-				if (this.randomSeedNum < this.player.numExplosives && this.randomSeedNum < this.maxExplosives) {
-					this.randomSeedNum += 1;
-					document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
-				}
-			}.bind(this);
-
-			// Decrement randomSeedNum button
-			var downTriangle = DOM.create('a', 'clickable button down-triangle');
-			downTriangle.onclick = function() {
-				if (this.randomSeedNum > 1) {
-					this.randomSeedNum -= 1;
-					document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
-				}
-			}.bind(this);
-
-			// Container for increment/decrement buttons
-			var triangleContainer = DOM.create('div', 'triangle-container');
-			triangleContainer.appendChild(upTriangle);
-			triangleContainer.appendChild(downTriangle);
-
-			var randomSeedNumContainer = DOM.create('div', 'rand-play-num-container');
-			randomSeedNumContainer.appendChild(randomSeedNumEl);
-			randomSeedNumContainer.appendChild(triangleContainer);
-
-			randomSeedWrapper.appendChild(randomSeed);
-			randomSeedWrapper.appendChild(randomSeedNumContainer);
-
-			menu.appendChild(play);
-			menu.appendChild(randomSeedWrapper);
-			DOM.style(menu, {
-				width: (this.scale * this.width) + 'px'
+		this.createGameLayer = function() {
+			var game = DOM.create('div', 'game');
+			DOM.style(game, {
+				width: (this.scale * this.width) + 'px',
+				height: (this.scale * this.height) + 'px'
 			});
-			return menu;
+			return game;
+		};
+
+		this.createBackgroundLayer = function() {
+			/*
+				element: {
+					property: value,
+					property: value,
+					...
+					children: {
+						// repeat
+					}
+				}
+			*/
+			
+			var elements = {
+				div: {
+					className: 'menu', 
+					children: [
+						{
+							button: {
+								className: 'clickable button norm-play',
+								innerHTML: 'PLAY',
+								onclick: function() {
+									this.doPlay();
+								}.bind(this)
+							},
+						},
+						{
+							div: {
+								className: 'rand-play-wrapper',
+								children: [
+									{
+										button: {
+											className: 'clickable button rand-play',
+											innerHTML: 'RANDOM SEED',
+											onclick: function() {
+												this.doRandSeed();
+											}.bind(this)
+										}
+									},
+									{
+										div: {
+											className: 'rand-play-num-container',
+											children: [
+												{
+													div: {
+														className: 'rand-play-num',
+														innerHTML: this.randomSeedNum.toString()
+													}
+												},
+												{
+													div: {
+														className: 'triangle-container',
+														children: [
+															{
+																a: {
+																	className: 'clickable button up-triangle',
+																	onclick: function() {
+																		if (this.randomSeedNum < this.player.numExplosives && this.randomSeedNum < this.maxExplosives) {
+																			this.randomSeedNum += 1;
+																			document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+																		}
+																	}.bind(this)
+																}
+															},
+															{
+																a: {
+																	className: 'clickable button down-triangle',
+																	onclick: function() {
+																		if (this.randomSeedNum > 1) {
+																			this.randomSeedNum -= 1;
+																			document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+																		}
+																	}.bind(this)
+																}
+															}
+														]
+													}
+												}
+											]
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			};
+
+			return DOM.createMany(elements);
+			// // Create menu
+			// var menu = DOM.create('div', 'menu');
+			// // Create play button
+			// var play = DOM.create('button', 'clickable button norm-play');
+			// play.innerHTML = 'PLAY';
+			// // Play onclick function (bind this)
+			// play.onclick = function() {
+			// 	this.doPlay();
+			// }.bind(this);
+
+			// // Create "random seed" button
+			// var randomSeedWrapper = DOM.create('div', 'rand-play-wrapper');
+			// var randomSeed = DOM.create('button', 'clickable button rand-play');
+			// randomSeed.innerHTML = 'RANDOM SEED';
+			// // randomSeed onclick function (bind this)
+			// randomSeed.onclick = function() {
+			// 	this.doRandSeed();
+			// }.bind(this);
+
+			// // Display randomSeedNum
+			// var randomSeedNumEl = DOM.create('div', 'rand-play-num');
+			// randomSeedNumEl.innerHTML = this.randomSeedNum.toString();
+
+			// // Increment randomSeedNum button
+			// var upTriangle = DOM.create('a', 'clickable button up-triangle');
+			// upTriangle.onclick = function() {
+			// 	if (this.randomSeedNum < this.player.numExplosives && this.randomSeedNum < this.maxExplosives) {
+			// 		this.randomSeedNum += 1;
+			// 		document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+			// 	}
+			// }.bind(this);
+
+			// // Decrement randomSeedNum button
+			// var downTriangle = DOM.create('a', 'clickable button down-triangle');
+			// downTriangle.onclick = function() {
+			// 	if (this.randomSeedNum > 1) {
+			// 		this.randomSeedNum -= 1;
+			// 		document.getElementsByClassName('rand-play-num')[0].innerHTML = this.randomSeedNum.toString();
+			// 	}
+			// }.bind(this);
+
+			// // Container for increment/decrement buttons
+			// var triangleContainer = DOM.create('div', 'triangle-container');
+			// triangleContainer.appendChild(upTriangle);
+			// triangleContainer.appendChild(downTriangle);
+
+			// var randomSeedNumContainer = DOM.create('div', 'rand-play-num-container');
+			// randomSeedNumContainer.appendChild(randomSeedNumEl);
+			// randomSeedNumContainer.appendChild(triangleContainer);
+
+			// randomSeedWrapper.appendChild(randomSeed);
+			// randomSeedWrapper.appendChild(randomSeedNumContainer);
+
+			// menu.appendChild(play);
+			// menu.appendChild(randomSeedWrapper);
+			// DOM.style(menu, {
+			// 	width: (this.scale * this.width) + 'px'
+			// });
+			// return menu;
 		};
 
 		this.createActorLayer = function() {
