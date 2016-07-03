@@ -1,9 +1,10 @@
 'use strict';
 
 define(function() {
-	return function() {
+	return function(city) {
 		this.numExplosives = 200;
 		this.loot = {};
+		this.city = city;
 
 		this.init = function() {
 			// TODO: ??

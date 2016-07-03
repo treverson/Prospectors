@@ -5,9 +5,12 @@ The idea of this game is to create an oldschool Neopets-inspired world in which 
 
 Players have "pets" that they feed, clothe, house, and battle against each other.
 
-Players play minigames to rack up George bucks (GB).
+Players play minigames to rack up $$.
 
 There is to be a strong emphasis on micro-rewards and random bonuses.
+	- Geyser that drops loot in city center
+	- Free plays on slot machine type of games
+	- etc.
 
 Players can spend real money to purchase in-game money.
 

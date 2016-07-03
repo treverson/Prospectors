@@ -2,7 +2,7 @@
 define(['prospectors', 'world'], function(Prospectors, World) {
 	return function() {
 		var view = Prospectors;
-		var world = new World(view);
+		var world = new World();
 		world.init();
 	};
 });

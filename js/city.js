@@ -5,8 +5,10 @@ A City
 
 define(['dom'], function(DOM) {
 	return function(display, player, config) {
+		this.name = 'city';
 		this.display = display;
 		this.player = player;
+		this.scale = config.blockSize || 30;
 		/* 
 			Grid of map tiles
 			Tile:
@@ -23,12 +25,19 @@ define(['dom'], function(DOM) {
 				- When reach the edge, reposition so player standing in center.
 		*/
 		this.init = function() {
-			console.log('init');
 			return this;
 		};
 
 		this.render = function() {
-			console.log('render');
+			this.display.drawLayer('background', this.createBackgroundLayer());
+		}
+
+		this.destroy = function() {
+			this.display.destroy(['background']);
+		}
+
+		this.createBackgroundLayer = function() {
+			return DOM.create('div', 'city-bg');
 		}
 	};
 });

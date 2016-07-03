@@ -91,6 +91,7 @@ define(['utils', 'dom'], function(Utils, DOM) {
 	};
 
 	var Prospectors = function(display, player, config) {
+		this.name = 'prospectors';
 		this.display = display;
 		this.player = player;
 		// The state of the game. Options include:
@@ -131,9 +132,18 @@ define(['utils', 'dom'], function(Utils, DOM) {
 				height: (this.scale * this.height) + 'px'
 			});
 			// Draw initial frame
-			this.display.drawLayer('game', game);
-			this.display.drawLayer('background', this.createBackgroundLayer());
-			this.display.drawLayer('actor', this.createActorLayer());
+			this.toDraw = {
+				game: game,
+				background: this.createBackgroundLayer(),
+				actor: this.createActorLayer()
+			};
+			for (var k in this.toDraw) {
+				this.display.drawLayer(k, this.toDraw[k]);
+			}
+		};
+
+		this.destroy = function() {
+			this.display.destroy(Object.keys(this.toDraw));
 		};
 
 		this.createBackgroundLayer = function() {

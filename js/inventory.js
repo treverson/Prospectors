@@ -30,7 +30,7 @@ define(['dom'], function(DOM) {
 		// TODO: Need "render" function (see overlay.js)
 		this.render = function() {
 			this.mainEl = DOM.create('div', 'inventory-overlay clickable');
-			display.drawLayer('wrap', this.mainEl);
+			display.drawLayer('overlay', this.mainEl);
 		};
 	};
 });

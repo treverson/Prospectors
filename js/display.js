@@ -9,12 +9,16 @@ Create a general display function (in World), add methods to it in each view (e.
 define(['dom'], function(DOM) {
 	return function() {
 		this.layers = {
-			parent: {
+			main: {
 				parent: null,
 				el: document.body
 			},
 			wrap: {
-				parent: 'parent',
+				parent: 'main',
+				el: null
+			},
+			overlay: {
+				parent: 'wrap',
 				el: null
 			},
 			game: {
@@ -31,6 +35,8 @@ define(['dom'], function(DOM) {
 			}
 			// <body>
 			// 	<wrap>
+			//		<overlay>
+			//		</overlay>
 			// 		<game>
 			// 			<actor>
 			// 			</actor>
@@ -40,7 +46,16 @@ define(['dom'], function(DOM) {
 			// </body>
 		};
 
-		this.layers.wrap.el = this.layers.parent.el.appendChild(DOM.create('div', 'game-wrapper'))
+		this.init = function() {
+			var p, e;
+			for (l in this.layers) {
+				if (!this.layers[l].el) { //ignore main
+					p = this.layers[l].parent;
+					e = DOM.create('div', l);
+					this.layers[l].el = this.layers[p].el.appendChild(e);
+				}
+			}
+		};
 
 		this.drawLayer = function(layer, el) {
 			if (this.layers[layer] && this.layers[layer].parent) {
@@ -52,15 +67,24 @@ define(['dom'], function(DOM) {
 				console.log("Parent: ", this.layers[this.layers[layer].parent]);
 				throw "One of the above does not exist";
 			}
-		}
+		};
+
+		this.destroy = function(layers) {
+			layers.forEach(function(layer) {
+				this.layers[layer].el.remove();
+				this.init();
+			}.bind(this));
+		};
 
 		this.addActor = function(el) {
 			this.layers.actor.el.appendChild(el);
-		}
+		};
 
 		this.removeActors = function() {
 			// Remove actors
 			// I'm thinking Display should take a World because then the Display can operate on a generic World.
 		};
+
+		this.init();
 	};
 });
