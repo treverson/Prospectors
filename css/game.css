@@ -166,6 +166,9 @@ button.button.rand-play {
 
 .city-bg {
 	background-image: url('../image/border.png');
+	background-repeat: no-repeat;
+	background-size: contain;
+	margin: 0 auto;
 }
 
 .enemy {

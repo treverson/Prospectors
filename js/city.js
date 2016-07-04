@@ -44,9 +44,10 @@ define(['dom'], function(DOM) {
 
 		this.createViewLayer = function() {
 			var bg = DOM.create('div', 'city-bg');
+			// ratio: 49w:25h
 			DOM.style(bg, {
-				width: '600px',
-				height: '400px'
+				width: '880px',
+				height: '500px'
 			});
 			return bg;
 
