@@ -6,7 +6,7 @@ have multiple displays with different behavior
 Create a general display function (in World), add methods to it in each view (e.g. Prospectors)
 */
 
-define(['dom'], function(DOM) {
+define(['dom', 'detect'], function(DOM, Detect) {
 	return function() {
 		this.layers = {
 			main: {
@@ -25,17 +25,11 @@ define(['dom'], function(DOM) {
 				parent: 'wrap',
 				el: null
 			}
-			// <body>
-			// 	<wrap>
-			//		<overlay>
-			//		</overlay>
-			// 		<game>
-			// 			<actor>
-			// 			</actor>
-			// 		</game>
-			// 		<background>
-			// 	</wrap>
-			// </body>
+		};
+
+		this.screen = {
+			w: Detect.getScreenWidth(),
+			h: Detect.getScreenHeight(),
 		};
 
 		this.init = function() {
@@ -69,11 +63,6 @@ define(['dom'], function(DOM) {
 					this.layers[layer].el.removeChild(this.layers[layer].el.firstChild);
 				}
 			}.bind(this));
-		};
-
-		this.removeActors = function() {
-			// Remove actors
-			// I'm thinking Display should take a World because then the Display can operate on a generic World.
 		};
 
 		this.init();

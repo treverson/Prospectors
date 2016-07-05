@@ -43,14 +43,54 @@ define(['dom'], function(DOM) {
 		};
 
 		this.createViewLayer = function() {
-			var bg = DOM.create('div', 'city-bg');
-			// ratio: 49w:25h
-			DOM.style(bg, {
-				width: '880px',
-				height: '500px'
-			});
-			return bg;
+			this.view = DOM.create('div', 'city-wrapper');
+			this.view.appendChild(this.createBackgroundLayer());
+			this.view.appendChild(this.createActorLayer());
+			return this.view;
+		};
 
-		}
+		this.createBackgroundLayer = function() {
+			this.backgroundLayer = DOM.create('div', 'city-bg');
+			// ratio: 49w:25h
+			var sizes = this.getSizes(); 
+			DOM.style(this.backgroundLayer, {
+				width: sizes.w + 'px',
+				height: sizes.h + 'px'
+			});
+			return this.backgroundLayer;
+		};
+
+		this.getSizes = function() {
+			var sizes = {
+				w: 490,
+				h: 250
+			}
+			// This needs to be adjusted to fit menus and other paddings!
+			if (this.display.screen.w >= 1366) {
+				// try 1225 x 625
+				if (this.display.screen.h >= 625) {
+					sizes.w = 1225;
+					sizes.h = 625;
+				} else {
+					sizes.h = this.display.screen.h;
+					sizes.w = (this.display.screen.h * 49) / 25;
+				}
+			} else if (this.display.screen.w >= 991) {
+				// try 880 x 500
+				if (this.display.screen.h >= 500) {
+					sizes.w = 880;
+					sizes.h = 500;
+				} else {
+					sizes.h = this.display.screen.h;
+					sizes.w = (this.display.screen.h * 49) / 25;
+				}
+			}
+			return sizes;
+		};
+
+		this.createActorLayer = function() {
+			this.actorLayer = DOM.create('div', 'city-actor-layer');
+			return this.actorLayer;
+		};
 	};
 });

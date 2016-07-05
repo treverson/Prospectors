@@ -125,7 +125,7 @@ define(['utils', 'dom'], function(Utils, DOM) {
 			this.actorLayer = this.createActorLayer();
 			this.backgroundLayer = this.createBackgroundLayer();
 			this.toDraw = {
-				view: this.createGameLayer(),
+				view: this.createViewLayer(),
 			};
 			return this;
 		};
@@ -141,7 +141,7 @@ define(['utils', 'dom'], function(Utils, DOM) {
 			this.display.destroy(Object.keys(this.toDraw));
 		};
 
-		this.createGameLayer = function() {
+		this.createViewLayer = function() {
 			var game = DOM.create('div', 'game');
 			DOM.style(game, {
 				width: (this.scale * this.width) + 'px',

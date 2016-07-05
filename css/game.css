@@ -166,6 +166,7 @@ button.button.rand-play {
 
 .city-bg {
 	background-image: url('../image/border.png');
+	padding: 15px;
 	background-repeat: no-repeat;
 	background-size: contain;
 	margin: 0 auto;
