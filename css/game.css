@@ -24,12 +24,31 @@ body {
 
 .inventory-overlay {
 	position: absolute;
-    right: -750px;
+    right: -800px;
     top: 0;
     bottom: 0;
     width: 800px;
     background-color: rgba(213, 117, 0, 1);
     z-index: 1050;
+    transition: all 0.35s ease;
+	-webkit-transition: all 0.35s ease;
+	-moz-transition: all 0.35s ease;
+
+}
+
+.tab {
+	position: absolute;
+    left: -50px;
+    height: 50px;
+    top: 10px;
+    bottom: 0;
+    width: 50px;
+    background-color: rgba(200, 100, 0, 1);
+    z-index: 1050;
+    transition: all 0.35s ease;
+	-webkit-transition: all 0.35s ease;
+	-moz-transition: all 0.35s ease;
+
 }
 
 .wall {
