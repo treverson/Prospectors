@@ -29,8 +29,60 @@ define(['dom'], function(DOM) {
 
 		// TODO: Need "render" function (see overlay.js)
 		this.render = function() {
-			this.mainEl = DOM.create('div', 'inventory-overlay clickable');
+			this.mainEl = DOM.create('div', 'inventory-overlay container');
+			this.tab = DOM.create('div', 'clickable tab');
+
+			//for(i = 0; i < 5; i++){		//create rows
+			//	this.row = DOM.create('div', 'row');
+			//	for(i = 0; i < 3; i++){		//create columns
+			//		this.row.appendChild(DOM.create('div' 'col-sm-4'));
+			//	}
+			//	this.mainEl.appendChild(this.row);
+			//}
+
+			this.mainEl.appendChild(this.tab);
 			display.drawLayer('wrap', this.mainEl);
+			this.openState = false;
+			this.fullState = false;
+
+			this.tab.onclick = function(){	//open and close inventory onclick
+				if (this.openState){
+					this.close();
+				} else {
+					this.open();
+				}
+			}.bind(this);
+
 		};
+
+
+		this.open = function() {	//open inventory
+			DOM.style(this.mainEl, {
+				right: '-500px'
+			});
+			this.openState = true;
+		};
+
+		this.close = function() {	//close inventory
+			DOM.style(this.mainEl, {
+				right: '-800px'
+			});
+			this.openState = false;
+		};
+
+		this.checkFull = function() {
+			if items.length >= 20{		//check to see if inventory is full
+				this.fullState = true;
+			} else{
+				this.fullState = false;
+			}
+		};
+
+		
+
 	};
+
+
+
+	
 });
