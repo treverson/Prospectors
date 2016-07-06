@@ -46,7 +46,7 @@ define(['dom'], function(DOM) {
 			this.fullState = false;
 
 			this.tab.onclick = function(){	//open and close inventory onclick
-				if (this.openState){
+				if (this.openState) {
 					this.close();
 				} else {
 					this.open();
@@ -71,9 +71,9 @@ define(['dom'], function(DOM) {
 		};
 
 		this.checkFull = function() {
-			if items.length >= 20{		//check to see if inventory is full
+			if (items.length >= 20) {		//check to see if inventory is full
 				this.fullState = true;
-			} else{
+			} else {
 				this.fullState = false;
 			}
 
