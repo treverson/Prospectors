@@ -1,0 +1,7 @@
+extends layout
+
+block content
+  script(src='js/lib/log.js')
+    script.
+      var require = { waitSeconds: 60 };
+    script(data-main='js/home', src='js/lib/require-jquery.js')
